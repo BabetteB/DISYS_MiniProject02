@@ -24,7 +24,7 @@ import "google/protobuf/empty.proto";
 
 service ChittyChatService {
   rpc Publish(ClientMessage) returns (StatusMessage) {}
-  rpc BroadCast(google.protobuf.Empty) returns (ChatRoomMessages) {}
+  rpc Broadcast(google.protobuf.Empty) returns (ChatRoomMessages) {}
   rpc Connect(UserInfo) returns (StatusMessage) {}
   rpc Disconnect(UserInfo) returns (StatusMessage) {}
 }
@@ -54,6 +54,7 @@ message ChatRoomMessages {
 message StatusMessage {
   string operation = 1;
   Status status = 2;
+  optional int32 NewId = 3;
 }
 
 /*

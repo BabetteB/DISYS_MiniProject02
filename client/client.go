@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ID int32
+	ID *int32
 	User string
 )
 
@@ -31,9 +31,9 @@ func main() {
 
 	c := chat.NewChittyChatServiceClient(conn)
 
-	response, _ := c.JoinedTheChat(context.Background(), &chat.UserInfo{
+	response, _ := c.Connect(context.Background(), &chat.UserInfo{
 		Name: User, });
-	ID = response.Id
+	ID = response.NewId
 	Output(fmt.Sprintf("You have id %v", ID))
 
 	
@@ -41,9 +41,9 @@ func main() {
 
 	for {
 	chatMsg := UserInput()
-
+	var currentId int32 = *ID
 	_, err := c.Publish(context.Background(), &chat.ClientMessage{
-		ClientId: ID,
+		ClientId: currentId,
 		Msg: chatMsg, 
 	})
 	if err != nil {
