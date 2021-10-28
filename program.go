@@ -1,5 +1,5 @@
 package main
-
+/*
 import (
 	"fmt"
 	"io"
@@ -61,3 +61,4 @@ func limitReader(s string) string {
 type msgInfo struct {
 	//msg string - timestamp - int (msg type)
 }
+ */
