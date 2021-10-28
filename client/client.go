@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/BabetteB/DISYS_MiniProject02/chat"
+	google_protobuf "github.com/golang/protobuf/ptypes/empty"
+
 )
 
 var (
@@ -36,6 +38,20 @@ func main() {
 	ID = response.NewId
 	Output(fmt.Sprintf("You have id %v", ID))
 
+	go func() {
+		lastMsg := ""
+		for {
+			response, err := c.Broadcast(context.Background(), new(google_protobuf.Empty))
+			if err != nil {
+				log.Fatalf("Error when calling Broadcast: %s", err)
+			}
+			chatLog := response.Msg[0]
+			if chatLog != "" && chatLog != lastMsg{
+				Output(response.Msg[0])
+			}
+			lastMsg = chatLog
+		}
+	}()
 	
 	Output("Connection to server was successful! Ready to chat!")
 
