@@ -1,0 +1,12 @@
+syntax = "proto3";
+package main;
+
+option go_package = "./chat";
+
+message Message {
+  string body = 1;
+}
+
+service ChittyChatService {
+  rpc SayHello(Message) returns (Message) {}
+}
