@@ -10,3 +10,5 @@ message Message {
 service ChittyChatService {
   rpc SayHello(Message) returns (Message) {}
 }
+
+// protoc --go_out=plugins=grpc:chat ChittyChat.proto
