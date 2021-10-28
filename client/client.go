@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	WelcomeMsg()
+	Output(WelcomeMsg())
 	EnterUsername()
 	Output("Connecting to server...")
 
@@ -27,7 +27,7 @@ func main() {
 	c := chat.NewChittyChatServiceClient(conn)
 
 	Output("Connection to server was successful! Ready to chat!")
-
+	for {
 	chatMsg := UserInput()
 
 	response, err := c.SayHello(context.Background(), &chat.Message{Body: chatMsg})
@@ -35,6 +35,7 @@ func main() {
 		log.Fatalf("Error when calling SayHello: %s", err)
 	}
 	log.Printf("Response from server: %s", response.Body)
+	}
 
 }
 
