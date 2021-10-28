@@ -3,12 +3,37 @@ package main;
 
 option go_package = "./chat";
 
-message Message {
-  string body = 1;
-}
+import "enums.proto";
 
 service ChittyChatService {
-  rpc SayHello(Message) returns (Message) {}
+  rpc Publish(ClientMessage) returns (StatusMessage) {}
+  rpc JoinedTheChat(UserInfo) returns (JoinedServer) {}
+  rpc BroadCast(StatusMessage) returns (ServerMessage) {}
+}
+
+message ClientMessage {
+  int32 clientId = 1;
+  string msg = 2;
+  //timestamp = 3; 
+}
+
+message ServerMessage {
+  string msg = 2;
+  //timestamp = 3; 
+}
+
+message StatusMessage {
+  //string msg = 1;
+  Status status = 2;
+}
+
+message JoinedServer {
+  int32 id = 1;
+  Status status = 2;
+}
+
+message UserInfo {
+  string name = 1;
 }
 
 // protoc --go_out=plugins=grpc:chat ChittyChat.proto

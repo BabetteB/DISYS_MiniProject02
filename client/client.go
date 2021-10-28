@@ -12,6 +12,11 @@ import (
 	"github.com/BabetteB/DISYS_MiniProject02/chat"
 )
 
+var (
+	ID int32
+	User string
+)
+
 func main() {
 	Output(WelcomeMsg())
 	EnterUsername()
@@ -26,23 +31,33 @@ func main() {
 
 	c := chat.NewChittyChatServiceClient(conn)
 
+	response, _ := c.JoinedTheChat(context.Background(), &chat.UserInfo{
+		Name: User, });
+	ID = response.Id
+	Output(fmt.Sprintf("You have id %v", ID))
+
+	
 	Output("Connection to server was successful! Ready to chat!")
+
 	for {
 	chatMsg := UserInput()
 
-	response, err := c.SayHello(context.Background(), &chat.Message{Body: chatMsg})
+	_, err := c.Publish(context.Background(), &chat.ClientMessage{
+		ClientId: ID,
+		Msg: chatMsg, 
+	})
 	if err != nil {
-		log.Fatalf("Error when calling SayHello: %s", err)
+		log.Fatalf("Error when calling Publish: %s", err)
 	}
-	log.Printf("Response from server: %s", response.Body)
+	//log.Printf("Response from server: %s", response.Body)
 	}
-
 }
 
 func WelcomeMsg() string {
 	return `>>> WELCOME TO CHITTY CHAT <<<
 --------------------------------------------------
 Please enter an username to begin chatting:
+Press Ctrl + C to leave!
 			`
 }
 
@@ -63,14 +78,14 @@ func LimitReader(s string) string {
 }
 
 func EnterUsername() {
-	user := UserInput()
-	Welcome(user)
+	User = UserInput()
+	Welcome(User)
 }
 
 func UserInput() (string){
 	var input string
 	fmt.Scanln(&input)
-	return input
+	return LimitReader(input)
 }
 
 func Welcome(input string) {

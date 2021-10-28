@@ -24,16 +24,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Message struct {
+type ClientMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Body string `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`
+	ClientId int32  `protobuf:"varint,1,opt,name=clientId,proto3" json:"clientId,omitempty"`
+	Msg      string `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"` //timestamp = 3;
 }
 
-func (x *Message) Reset() {
-	*x = Message{}
+func (x *ClientMessage) Reset() {
+	*x = ClientMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ChittyChat_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -41,13 +42,13 @@ func (x *Message) Reset() {
 	}
 }
 
-func (x *Message) String() string {
+func (x *ClientMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Message) ProtoMessage() {}
+func (*ClientMessage) ProtoMessage() {}
 
-func (x *Message) ProtoReflect() protoreflect.Message {
+func (x *ClientMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_ChittyChat_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -59,14 +60,218 @@ func (x *Message) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Message.ProtoReflect.Descriptor instead.
-func (*Message) Descriptor() ([]byte, []int) {
+// Deprecated: Use ClientMessage.ProtoReflect.Descriptor instead.
+func (*ClientMessage) Descriptor() ([]byte, []int) {
 	return file_ChittyChat_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Message) GetBody() string {
+func (x *ClientMessage) GetClientId() int32 {
 	if x != nil {
-		return x.Body
+		return x.ClientId
+	}
+	return 0
+}
+
+func (x *ClientMessage) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
+type ServerMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Msg string `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"` //timestamp = 3;
+}
+
+func (x *ServerMessage) Reset() {
+	*x = ServerMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ChittyChat_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ServerMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServerMessage) ProtoMessage() {}
+
+func (x *ServerMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_ChittyChat_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServerMessage.ProtoReflect.Descriptor instead.
+func (*ServerMessage) Descriptor() ([]byte, []int) {
+	return file_ChittyChat_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ServerMessage) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
+type StatusMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	//string msg = 1;
+	Status Status `protobuf:"varint,2,opt,name=status,proto3,enum=main.Status" json:"status,omitempty"`
+}
+
+func (x *StatusMessage) Reset() {
+	*x = StatusMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ChittyChat_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StatusMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusMessage) ProtoMessage() {}
+
+func (x *StatusMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_ChittyChat_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusMessage.ProtoReflect.Descriptor instead.
+func (*StatusMessage) Descriptor() ([]byte, []int) {
+	return file_ChittyChat_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *StatusMessage) GetStatus() Status {
+	if x != nil {
+		return x.Status
+	}
+	return Status_INVALID
+}
+
+type JoinedServer struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Id     int32  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Status Status `protobuf:"varint,2,opt,name=status,proto3,enum=main.Status" json:"status,omitempty"`
+}
+
+func (x *JoinedServer) Reset() {
+	*x = JoinedServer{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ChittyChat_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *JoinedServer) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinedServer) ProtoMessage() {}
+
+func (x *JoinedServer) ProtoReflect() protoreflect.Message {
+	mi := &file_ChittyChat_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinedServer.ProtoReflect.Descriptor instead.
+func (*JoinedServer) Descriptor() ([]byte, []int) {
+	return file_ChittyChat_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *JoinedServer) GetId() int32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *JoinedServer) GetStatus() Status {
+	if x != nil {
+		return x.Status
+	}
+	return Status_INVALID
+}
+
+type UserInfo struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+func (x *UserInfo) Reset() {
+	*x = UserInfo{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ChittyChat_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UserInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserInfo) ProtoMessage() {}
+
+func (x *UserInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_ChittyChat_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserInfo.ProtoReflect.Descriptor instead.
+func (*UserInfo) Descriptor() ([]byte, []int) {
+	return file_ChittyChat_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UserInfo) GetName() string {
+	if x != nil {
+		return x.Name
 	}
 	return ""
 }
@@ -75,14 +280,37 @@ var File_ChittyChat_proto protoreflect.FileDescriptor
 
 var file_ChittyChat_proto_rawDesc = []byte{
 	0x0a, 0x10, 0x43, 0x68, 0x69, 0x74, 0x74, 0x79, 0x43, 0x68, 0x61, 0x74, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x12, 0x04, 0x6d, 0x61, 0x69, 0x6e, 0x22, 0x1d, 0x0a, 0x07, 0x4d, 0x65, 0x73, 0x73,
-	0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x32, 0x3f, 0x0a, 0x11, 0x43, 0x68, 0x69, 0x74, 0x74,
-	0x79, 0x43, 0x68, 0x61, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x2a, 0x0a, 0x08,
-	0x53, 0x61, 0x79, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x12, 0x0d, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x0d, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x42, 0x08, 0x5a, 0x06, 0x2e, 0x2f, 0x63, 0x68,
-	0x61, 0x74, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x6f, 0x12, 0x04, 0x6d, 0x61, 0x69, 0x6e, 0x1a, 0x0b, 0x65, 0x6e, 0x75, 0x6d, 0x73, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x3d, 0x0a, 0x0d, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74,
+	0x49, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74,
+	0x49, 0x64, 0x12, 0x10, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x03, 0x6d, 0x73, 0x67, 0x22, 0x21, 0x0a, 0x0d, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x03, 0x6d, 0x73, 0x67, 0x22, 0x35, 0x0a, 0x0d, 0x53, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x24, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74,
+	0x75, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x0c, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x44,
+	0x0a, 0x0c, 0x4a, 0x6f, 0x69, 0x6e, 0x65, 0x64, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x12, 0x0e,
+	0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x02, 0x69, 0x64, 0x12, 0x24,
+	0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x0c,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74,
+	0x61, 0x74, 0x75, 0x73, 0x22, 0x1e, 0x0a, 0x08, 0x55, 0x73, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f,
+	0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
+	0x6e, 0x61, 0x6d, 0x65, 0x32, 0xba, 0x01, 0x0a, 0x11, 0x43, 0x68, 0x69, 0x74, 0x74, 0x79, 0x43,
+	0x68, 0x61, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x35, 0x0a, 0x07, 0x50, 0x75,
+	0x62, 0x6c, 0x69, 0x73, 0x68, 0x12, 0x13, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x43, 0x6c, 0x69,
+	0x65, 0x6e, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x13, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22,
+	0x00, 0x12, 0x35, 0x0a, 0x0d, 0x4a, 0x6f, 0x69, 0x6e, 0x65, 0x64, 0x54, 0x68, 0x65, 0x43, 0x68,
+	0x61, 0x74, 0x12, 0x0e, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x49, 0x6e,
+	0x66, 0x6f, 0x1a, 0x12, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x65, 0x64,
+	0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x22, 0x00, 0x12, 0x37, 0x0a, 0x09, 0x42, 0x72, 0x6f, 0x61,
+	0x64, 0x43, 0x61, 0x73, 0x74, 0x12, 0x13, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x53, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x13, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22,
+	0x00, 0x42, 0x08, 0x5a, 0x06, 0x2e, 0x2f, 0x63, 0x68, 0x61, 0x74, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -97,18 +325,29 @@ func file_ChittyChat_proto_rawDescGZIP() []byte {
 	return file_ChittyChat_proto_rawDescData
 }
 
-var file_ChittyChat_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_ChittyChat_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_ChittyChat_proto_goTypes = []interface{}{
-	(*Message)(nil), // 0: main.Message
+	(*ClientMessage)(nil), // 0: main.ClientMessage
+	(*ServerMessage)(nil), // 1: main.ServerMessage
+	(*StatusMessage)(nil), // 2: main.StatusMessage
+	(*JoinedServer)(nil),  // 3: main.JoinedServer
+	(*UserInfo)(nil),      // 4: main.UserInfo
+	(Status)(0),           // 5: main.Status
 }
 var file_ChittyChat_proto_depIdxs = []int32{
-	0, // 0: main.ChittyChatService.SayHello:input_type -> main.Message
-	0, // 1: main.ChittyChatService.SayHello:output_type -> main.Message
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	5, // 0: main.StatusMessage.status:type_name -> main.Status
+	5, // 1: main.JoinedServer.status:type_name -> main.Status
+	0, // 2: main.ChittyChatService.Publish:input_type -> main.ClientMessage
+	4, // 3: main.ChittyChatService.JoinedTheChat:input_type -> main.UserInfo
+	2, // 4: main.ChittyChatService.BroadCast:input_type -> main.StatusMessage
+	2, // 5: main.ChittyChatService.Publish:output_type -> main.StatusMessage
+	3, // 6: main.ChittyChatService.JoinedTheChat:output_type -> main.JoinedServer
+	1, // 7: main.ChittyChatService.BroadCast:output_type -> main.ServerMessage
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_ChittyChat_proto_init() }
@@ -116,9 +355,58 @@ func file_ChittyChat_proto_init() {
 	if File_ChittyChat_proto != nil {
 		return
 	}
+	file_enums_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_ChittyChat_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Message); i {
+			switch v := v.(*ClientMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ChittyChat_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ServerMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ChittyChat_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StatusMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ChittyChat_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*JoinedServer); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ChittyChat_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UserInfo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -136,7 +424,7 @@ func file_ChittyChat_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ChittyChat_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -162,7 +450,9 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ChittyChatServiceClient interface {
-	SayHello(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error)
+	Publish(ctx context.Context, in *ClientMessage, opts ...grpc.CallOption) (*StatusMessage, error)
+	JoinedTheChat(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*JoinedServer, error)
+	BroadCast(ctx context.Context, in *StatusMessage, opts ...grpc.CallOption) (*ServerMessage, error)
 }
 
 type chittyChatServiceClient struct {
@@ -173,9 +463,27 @@ func NewChittyChatServiceClient(cc grpc.ClientConnInterface) ChittyChatServiceCl
 	return &chittyChatServiceClient{cc}
 }
 
-func (c *chittyChatServiceClient) SayHello(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error) {
-	out := new(Message)
-	err := c.cc.Invoke(ctx, "/main.ChittyChatService/SayHello", in, out, opts...)
+func (c *chittyChatServiceClient) Publish(ctx context.Context, in *ClientMessage, opts ...grpc.CallOption) (*StatusMessage, error) {
+	out := new(StatusMessage)
+	err := c.cc.Invoke(ctx, "/main.ChittyChatService/Publish", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chittyChatServiceClient) JoinedTheChat(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*JoinedServer, error) {
+	out := new(JoinedServer)
+	err := c.cc.Invoke(ctx, "/main.ChittyChatService/JoinedTheChat", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chittyChatServiceClient) BroadCast(ctx context.Context, in *StatusMessage, opts ...grpc.CallOption) (*ServerMessage, error) {
+	out := new(ServerMessage)
+	err := c.cc.Invoke(ctx, "/main.ChittyChatService/BroadCast", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -184,35 +492,79 @@ func (c *chittyChatServiceClient) SayHello(ctx context.Context, in *Message, opt
 
 // ChittyChatServiceServer is the server API for ChittyChatService service.
 type ChittyChatServiceServer interface {
-	SayHello(context.Context, *Message) (*Message, error)
+	Publish(context.Context, *ClientMessage) (*StatusMessage, error)
+	JoinedTheChat(context.Context, *UserInfo) (*JoinedServer, error)
+	BroadCast(context.Context, *StatusMessage) (*ServerMessage, error)
 }
 
 // UnimplementedChittyChatServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedChittyChatServiceServer struct {
 }
 
-func (*UnimplementedChittyChatServiceServer) SayHello(context.Context, *Message) (*Message, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SayHello not implemented")
+func (*UnimplementedChittyChatServiceServer) Publish(context.Context, *ClientMessage) (*StatusMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
+}
+func (*UnimplementedChittyChatServiceServer) JoinedTheChat(context.Context, *UserInfo) (*JoinedServer, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method JoinedTheChat not implemented")
+}
+func (*UnimplementedChittyChatServiceServer) BroadCast(context.Context, *StatusMessage) (*ServerMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BroadCast not implemented")
 }
 
 func RegisterChittyChatServiceServer(s *grpc.Server, srv ChittyChatServiceServer) {
 	s.RegisterService(&_ChittyChatService_serviceDesc, srv)
 }
 
-func _ChittyChatService_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Message)
+func _ChittyChatService_Publish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClientMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ChittyChatServiceServer).SayHello(ctx, in)
+		return srv.(ChittyChatServiceServer).Publish(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/main.ChittyChatService/SayHello",
+		FullMethod: "/main.ChittyChatService/Publish",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChittyChatServiceServer).SayHello(ctx, req.(*Message))
+		return srv.(ChittyChatServiceServer).Publish(ctx, req.(*ClientMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChittyChatService_JoinedTheChat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserInfo)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChittyChatServiceServer).JoinedTheChat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/main.ChittyChatService/JoinedTheChat",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChittyChatServiceServer).JoinedTheChat(ctx, req.(*UserInfo))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChittyChatService_BroadCast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChittyChatServiceServer).BroadCast(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/main.ChittyChatService/BroadCast",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChittyChatServiceServer).BroadCast(ctx, req.(*StatusMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -222,8 +574,16 @@ var _ChittyChatService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ChittyChatServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SayHello",
-			Handler:    _ChittyChatService_SayHello_Handler,
+			MethodName: "Publish",
+			Handler:    _ChittyChatService_Publish_Handler,
+		},
+		{
+			MethodName: "JoinedTheChat",
+			Handler:    _ChittyChatService_JoinedTheChat_Handler,
+		},
+		{
+			MethodName: "BroadCast",
+			Handler:    _ChittyChatService_BroadCast_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
