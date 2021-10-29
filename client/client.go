@@ -1,3 +1,5 @@
+
+
 package main
 
 import (
@@ -5,6 +7,8 @@ import (
 	"io"
 	"log"
 	"strings"
+	"bufio"
+	"os"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -15,8 +19,9 @@ import (
 )
 
 var (
-	ID *int32
-	User string
+	ID int32
+	user string
+	closed bool
 )
 
 func main() {
@@ -34,40 +39,55 @@ func main() {
 	c := chat.NewChittyChatServiceClient(conn)
 
 	response, _ := c.Connect(context.Background(), &chat.UserInfo{
-		Name: User, });
-	ID = response.NewId
-	Output(fmt.Sprintf("You have id %v", ID))
+		Name: user, });
+	ID = *response.NewId
+	Output(fmt.Sprintf("You have id #%v", ID))
 
-	go func() {
-		lastMsg := ""
-		for {
-			response, err := c.Broadcast(context.Background(), new(google_protobuf.Empty))
-			if err != nil {
-				log.Fatalf("Error when calling Broadcast: %s", err)
-			}
-			chatLog := response.Msg[0]
-			if chatLog != "" && chatLog != lastMsg{
-				Output(response.Msg[0])
-			}
-			lastMsg = chatLog
-		}
-	}()
+	go ServerObserver(c)
 	
 	Output("Connection to server was successful! Ready to chat!")
 
-	for {
-	chatMsg := UserInput()
-	var currentId int32 = *ID
-	_, err := c.Publish(context.Background(), &chat.ClientMessage{
-		ClientId: currentId,
-		Msg: chatMsg, 
-	})
-	if err != nil {
-		log.Fatalf("Error when calling Publish: %s", err)
-	}
-	//log.Printf("Response from server: %s", response.Body)
+	go ServerRequester(c)
+
+	for{
+		if(closed) {
+			break
+		}
 	}
 }
+
+func ServerObserver(c chat.ChittyChatServiceClient) {
+	lastMsg := ""
+	for {
+		response, err := c.Broadcast(context.Background(), new(google_protobuf.Empty))
+		if err != nil {
+			log.Fatalf("Error when calling Broadcast: %s", err)
+		}
+		chatLog := response.Msg
+		if chatLog != "" && chatLog != lastMsg{
+			Output(FormatToChat(response.Username, response.Msg, response.Timestamp))
+		}
+		lastMsg = chatLog
+	}
+}
+
+func ServerRequester(c chat.ChittyChatServiceClient) {
+	for {
+		chatMsg := UserInput()
+		var currentId int32 = ID
+		_, err := c.Publish(context.Background(), &chat.ClientMessage{
+			ClientId: currentId,
+			UserName: user,
+			Msg: chatMsg, 
+		})
+		if err != nil {
+			log.Fatalf("Error when calling Publish: %s", err)
+		}
+		//log.Printf("Response from server: %s", response.Body)
+	}
+}
+
+
 
 func WelcomeMsg() string {
 	return `>>> WELCOME TO CHITTY CHAT <<<
@@ -77,7 +97,7 @@ Press Ctrl + C to leave!
 			`
 }
 
-func LimitReader(s string) string {
+func LimitReader(s string)  string {
 	limit := 128
 
 	reader := strings.NewReader(s)
@@ -94,22 +114,32 @@ func LimitReader(s string) string {
 }
 
 func EnterUsername() {
-	User = UserInput()
-	Welcome(User)
+	user = UserInput()
+	Welcome(user)
 }
 
 func UserInput() (string){
-	var input string
-	fmt.Scanln(&input)
-	return LimitReader(input)
+	reader := bufio.NewReader(os.Stdin)
+	msg, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatalf(" Failed to read from console :: %v", err)
+		}
+	msg = strings.Trim(msg, "\r\n")
+	
+	return LimitReader(msg)
 }
 
 func Welcome(input string) {
-	//more in depth welcome msg 
-	//individual welcome msg
 	Output("Welcome to the chat " + input)
+}
+
+func FormatToChat(user, msg string, timestamp string) string{
+	return fmt.Sprintf("%v - %v:  %v", timestamp, user, msg)
 }
 
 func Output(input string) {
 	fmt.Println(input)
 }
+
+
+

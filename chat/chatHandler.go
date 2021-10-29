@@ -9,13 +9,14 @@ import (
 )
 
 const (
-	mockTimestamp = 20000000;
+	mockTimestamp = "2021-10-29 00:00:00";
 ) 
 
 var (
 	broadcastMessage = "";
+	broadcaster = "";
 	isNewMessage bool;
-	//clients = make(map[int32] string);
+	clients = make(map[int32] string);
 )
 
 
@@ -25,7 +26,8 @@ type Server struct {
 func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage, error) {
 	//log.Printf("Receive message body from client: %s", in.Body)
 	response := StatusMessage{ Status: Status_SUCCESS};
-	broadcastMessage = in.Msg 
+	broadcastMessage = in.Msg
+	broadcaster = in.UserName 
 	isNewMessage = true
 	// println(broadcastMessage) // Test
 	return &response, nil
@@ -33,16 +35,23 @@ func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage
 
 func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*ChatRoomMessages, error) {
 	// log.Printf("")
+	receivers := 0;
 	if isNewMessage {
-		isNewMessage = false
+		receivers++
+		if(receivers == len(clients)) {
+			isNewMessage = false
+			receivers = 0
+		}
 		return &ChatRoomMessages{
-			Msg: []string {broadcastMessage},
-			Timestamp: []int32 {mockTimestamp},
+			Msg: broadcastMessage,
+			Timestamp: mockTimestamp,
+			Username: broadcaster,
 			}, nil
 	} else {
 		return &ChatRoomMessages{
-			Msg: []string {""},
-			Timestamp: []int32 {mockTimestamp},
+			Msg: "",
+			Timestamp: mockTimestamp,
+			Username: "",
 			}, nil
 	}
 	
@@ -50,7 +59,8 @@ func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*Cha
 
 func (s *Server) Connect(ctx context.Context, in *UserInfo) (*StatusMessage, error) {
 	// log.Printf("")
-	var newId int32 = 143234
+	var newId int32 = int32(len(clients)+1)
+	clients[newId] = in.Name
 	response := StatusMessage{
 		Operation: "Operation: Connect",
 		Status: Status_SUCCESS,

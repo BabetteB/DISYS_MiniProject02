@@ -37,15 +37,17 @@ message ClientMessage {
   int32 clientId = 1;
   string userName = 2;
   string msg = 3;
-  int32 timestamp = 4; // TIMECHAR: Turn this into a timestamp object = 4; 
+  string timestamp = 4; // TIMECHAR: Turn this into a timestamp object = 4; 
 }
 
 /* 
   Message from the user to the server -> chatroom.
 */
 message ChatRoomMessages {
-  repeated string msg = 1;
-  repeated int32 timestamp = 2; // TIMECHAR: Turn this into a timestamp object= 2; 
+  string msg = 1;
+  string timestamp = 2; // TIMECHAR: Turn this into a timestamp object= 2; 
+  string username =3;
+
 }
 
 /*
