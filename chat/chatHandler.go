@@ -25,7 +25,9 @@ type Server struct {
 
 func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage, error) {
 	//log.Printf("Receive message body from client: %s", in.Body)
-	response := StatusMessage{ Status: Status_SUCCESS};
+	response := StatusMessage{ 
+		Operation: "Operation: Publish",
+		Status: Status_SUCCESS};
 	broadcastMessage = in.Msg
 	broadcaster = in.UserName 
 	isNewMessage = true
@@ -53,8 +55,7 @@ func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*Cha
 			Timestamp: mockTimestamp,
 			Username: "",
 			}, nil
-	}
-	
+	}	
 }
 
 func (s *Server) Connect(ctx context.Context, in *UserInfo) (*StatusMessage, error) {
