@@ -1,8 +1,8 @@
 package chat
 
 import (
-	logger  "github.com/BabetteB/DISYS_MiniProject02/logFile"
 	"golang.org/x/net/context"
+	logger "github.com/BabetteB/DISYS_MiniProject02/logFile"
 	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 )
 
@@ -18,12 +18,10 @@ var (
 )
 
 
-type Server struct {
-	logger.InfoLogger("Server initialized")
-}
+type Server struct {}
 
 func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage, error) {
-	log.InfoLogger("Received message from client: %s", in.Body)
+	logger.InfoLogger.Println("Received message from client: %v", in.Msg)
 
 	response := StatusMessage{ 
 		Operation: "Operation: Publish",
@@ -32,12 +30,12 @@ func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage
 	broadcaster = in.UserName 
 	isNewMessage = true
 	// println(broadcastMessage) // Test
-	log.InfoLogger("Response successfull")
+	logger.InfoLogger.Println("Response successfull")
 	return &response, nil
 }
 
 func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*ChatRoomMessages, error) {
-	logger.InfoLogger()
+	logger.InfoLogger.Println("Requesting brodcast")
 	receivers := 0;
 	if isNewMessage {
 		receivers++
@@ -45,12 +43,14 @@ func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*Cha
 			isNewMessage = false
 			receivers = 0
 		}
+		logger.InfoLogger.Println("Brodcast successfull")
 		return &ChatRoomMessages{
 			Msg: broadcastMessage,
 			Timestamp: mockTimestamp,
 			Username: broadcaster,
 			}, nil
 	} else {
+		logger.WarningLogger.Println("Bodcasting empty message and empty user")
 		return &ChatRoomMessages{
 			Msg: "",
 			Timestamp: mockTimestamp,
@@ -60,7 +60,7 @@ func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*Cha
 }
 
 func (s *Server) Connect(ctx context.Context, in *UserInfo) (*StatusMessage, error) {
-	// log.Printf("")
+	logger.InfoLogger.Println("Requesting connection")
 	var newId int32 = int32(len(clients)+1)
 	clients[newId] = in.Name
 	response := StatusMessage{
@@ -68,15 +68,19 @@ func (s *Server) Connect(ctx context.Context, in *UserInfo) (*StatusMessage, err
 		Status: Status_SUCCESS,
 		NewId: &newId,
 	}
+	logger.InfoLogger.Println("Connection status: %s", StatusMessage)
 	return &response, nil
 }
 
 func (s *Server) Disconnect(ctx context.Context, in *UserInfo) (*StatusMessage, error) {
-	// log.Printf("")
+	logger.InfoLogger.Println("Requesting disconnection")
 	response := StatusMessage{
 		Operation: "Operation: Disconnect",
 		Status: Status_SUCCESS,
 	}
+	logger.InfoLogger.Println("Disconnection status: %s", StatusMessage)
 	return &response, nil
 }
+
+
 

@@ -1,25 +1,24 @@
 package main
 
 import (
-	log  "github.com/BabetteB/DISYS_MiniProject02/logFile"
 	"fmt"
 	"net"
 	"os"
-
+	logger "github.com/BabetteB/DISYS_MiniProject02/logFile"
 	"github.com/BabetteB/DISYS_MiniProject02/chat"
 	"google.golang.org/grpc"
 )
 
 func main() {
-	logFileInit()
+	logger.logFileInit()
 
 	Output("Server started")
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 3000))
 	if err != nil {
-		log.ErrorLogger.Fatalf("FATAL: Connection unable to establish. Failed to listen: %v", err)
+		logger.ErrorLogger.Fatalf("FATAL: Connection unable to establish. Failed to listen: %v", err)
 	}
-	log.InfoLogger("Connection established through TCP, listening at port 3000", )
+	logger.InfoLogger.Println("Connection established through TCP, listening at port 3000", )
 
 	s := chat.Server{}
 
@@ -29,7 +28,7 @@ func main() {
 
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
-			log.ErrorLogger.Fatalf("FATAL: Server connection failed: %s", err)
+			logger.ErrorLogger.Fatalf("FATAL: Server connection failed: %s", err)
 		}
 	}()
 	
@@ -38,12 +37,10 @@ func main() {
 
 	var o string
 	fmt.Scanln(&o)
-	log.InfoLogger.Println("Exit successfull. Server closing...")
+	logger.InfoLogger.Println("Exit successfull. Server closing...")
 	os.Exit(3)	
 }
 
 func Output(input string) {
 	fmt.Println(input)
 }
-
-

@@ -3,7 +3,7 @@
 package main
 
 import (
-	log "github.com/BabetteB/DISYS_MiniProject02/logFile"
+	logger "github.com/BabetteB/DISYS_MiniProject02/logFile"
 	"fmt"
 	"io"
 	"strings"
@@ -32,7 +32,7 @@ func main() {
 	var conn *grpc.ClientConn
 	conn, err := grpc.Dial(":3000", grpc.WithInsecure())
 	if err != nil {
-		log.ErrorLogger("did not connect: %s", err)
+		logger.ErrorLogger("did not connect: %s", err)
 	}
 	defer conn.Close()
 
@@ -61,7 +61,7 @@ func ServerObserver(c chat.ChittyChatServiceClient) {
 	for {
 		response, err := c.Broadcast(context.Background(), new(google_protobuf.Empty))
 		if err != nil {
-			log.ErrorLogger("Error when calling Broadcast: %s", err)
+			logger.ErrorLogger("Error when calling Broadcast: %s", err)
 		}
 		chatLog := response.Msg
 		if chatLog != "" && chatLog != lastMsg{
@@ -81,7 +81,7 @@ func ServerRequester(c chat.ChittyChatServiceClient) {
 			Msg: chatMsg, 
 		})
 		if err != nil {
-			log.ErrorLogger("Error when calling Publish: %s", err)
+			logger.ErrorLogger("Error when calling Publish: %s", err)
 		}
 		//log.Printf("Response from server: %s", response.Body)
 	}
@@ -116,14 +116,14 @@ func LimitReader(s string)  string {
 func EnterUsername() {
 	user = UserInput()
 	Welcome(user)
-	log.InfoLogger("User registred: %v", user)
+	logger.InfoLogger("User registred: %v", user)
 }
 
 func UserInput() (string){
 	reader := bufio.NewReader(os.Stdin)
 	msg, err := reader.ReadString('\n')
 		if err != nil {
-			log.ErrorLogger(" Failed to read from console :: %v", err)
+			logger.ErrorLogger(" Failed to read from console :: %v", err)
 		}
 	msg = strings.Trim(msg, "\r\n")
 	
