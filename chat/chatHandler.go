@@ -16,10 +16,21 @@ var (
 	broadcaster      = ""
 	isNewMessage     bool
 	clients          = make(map[int32]string)
-	timestamp        int32
+	//timestamp        int32
 )
 
 type Server struct {
+	timestamp lamport_timestamp
+}
+
+// used in the client as well - maybe move to seperate file? + its functions?
+type lamport_timestamp struct {
+	id        int32
+	timestamp int32
+}
+
+func (s *Server) setServer() {
+	s.timestamp.id = 0
 }
 
 func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage, error) {
@@ -30,7 +41,7 @@ func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage
 	broadcastMessage = in.Msg
 	broadcaster = in.UserName
 	isNewMessage = true
-	timestamp += 1
+	s.timestamp.timestamp += 1
 	// println(broadcastMessage) // Test
 	return &response, nil
 }
@@ -38,7 +49,7 @@ func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage
 func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*ChatRoomMessages, error) {
 	// log.Printf("")
 	receivers := 0
-	timestamp += 1
+	s.timestamp.timestamp += 1
 	if isNewMessage {
 		receivers++
 		if receivers == len(clients) {
@@ -46,15 +57,15 @@ func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*Cha
 			receivers = 0
 		}
 		return &ChatRoomMessages{
-			Msg:       broadcastMessage,
-			Timestamp: timestamp,
-			Username:  broadcaster,
+			Msg:              broadcastMessage,
+			LamportTimestamp: s.timestamp.timestamp,
+			Username:         broadcaster,
 		}, nil
 	} else {
 		return &ChatRoomMessages{
-			Msg:       "",
-			Timestamp: timestamp,
-			Username:  "",
+			Msg:              "",
+			LamportTimestamp: s.timestamp.timestamp,
+			Username:         "",
 		}, nil
 	}
 }

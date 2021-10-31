@@ -20,6 +20,7 @@ func main() {
 	}
 
 	s := chat.Server{}
+	chat.setServer(s)
 
 	grpcServer := grpc.NewServer()
 
@@ -30,18 +31,15 @@ func main() {
 			log.Fatalf("failed to serve: %s", err)
 		}
 	}()
-	
 
 	Output("Server started. Press any key to stop")
 
 	var o string
 	fmt.Scanln(&o)
 	// Log exit
-	os.Exit(3)	
+	os.Exit(3)
 }
 
 func Output(input string) {
 	fmt.Println(input)
 }
-
-
