@@ -5,6 +5,7 @@
 //
 //- protoc --go_out=plugins=grpc:chat ChittyChat.proto
 //
+
 //Den laver nok pbfilen i en forkert mappe, men den skal bare rykkes til den rigtige chat-mappe og
 //overskrive den der er, så kan du slette den "nye" generede mappe. Herfra skal koden ændres, der
 //hvor der vil være fejl til at modtage en timestamp istedet for en en int som nu. J

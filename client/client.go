@@ -9,7 +9,6 @@ import (
 
 	logger "github.com/BabetteB/DISYS_MiniProject02/logFile"
 
-
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
@@ -94,7 +93,6 @@ Press Ctrl + C to leave!
 }
 
 func LimitReader(s string) string {
-
 	limit := 128
 
 	reader := strings.NewReader(s)
@@ -132,11 +130,9 @@ func Welcome(input string) {
 }
 
 func FormatToChat(user, msg string, timestamp string) string {
-
 	return fmt.Sprintf("%v - %v:  %v", timestamp, user, msg)
 }
 
 func Output(input string) {
 	fmt.Println(input)
 }
-

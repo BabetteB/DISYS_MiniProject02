@@ -6,10 +6,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-const (
-	mockTimestamp = "2021-10-29 00:00:00"
-)
-
 var (
 	broadcastMessage = ""
 	broadcaster      = ""
@@ -17,43 +13,55 @@ var (
 	clients          = make(map[int32]string)
 )
 
-type Server struct{}
+type Server struct {
+	timestamp lamport_timestamp
+}
+
+// used in the client as well - maybe move to seperate file? + its functions?
+type lamport_timestamp struct {
+	id        int32
+	timestamp int32
+}
+
+func (s *Server) setServer() {
+	s.timestamp.id = 0
+}
 
 func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage, error) {
 	logger.InfoLogger.Printf("Received message from client: %v", in.Msg)
-
 	response := StatusMessage{
 		Operation: "Operation: Publish",
 		Status:    Status_SUCCESS}
 	broadcastMessage = in.Msg
 	broadcaster = in.UserName
 	isNewMessage = true
-	// println(broadcastMessage) // Test
+	s.timestamp.timestamp += 1
 	logger.InfoLogger.Println("Response successfull")
 	return &response, nil
 }
 
 func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*ChatRoomMessages, error) {
-	logger.InfoLogger.Println("Requesting brodcast")
 	receivers := 0
+	s.timestamp.timestamp += 1
+	logger.InfoLogger.Println("Requesting brodcast")
 	if isNewMessage {
 		receivers++
 		if receivers == len(clients) {
 			isNewMessage = false
 			receivers = 0
 		}
-		logger.InfoLogger.Println("Brodcast successfull")
+    logger.InfoLogger.Println("Brodcast successfull")
 		return &ChatRoomMessages{
-			Msg:       broadcastMessage,
-			Timestamp: mockTimestamp,
-			Username:  broadcaster,
+			Msg:              broadcastMessage,
+			LamportTimestamp: s.timestamp.timestamp,
+			Username:         broadcaster,
 		}, nil
 	} else {
-		logger.WarningLogger.Println("Bodcasting empty message and empty user")
+    logger.WarningLogger.Println("Bodcasting empty message and empty user")
 		return &ChatRoomMessages{
-			Msg:       "",
-			Timestamp: mockTimestamp,
-			Username:  "",
+			Msg:              "",
+			LamportTimestamp: s.timestamp.timestamp,
+			Username:         "",
 		}, nil
 	}
 }

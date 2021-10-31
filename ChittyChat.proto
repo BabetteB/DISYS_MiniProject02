@@ -5,6 +5,9 @@
 
     - protoc --go_out=plugins=grpc:chat ChittyChat.proto
 
+    protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ChittyChat.proto
+      kommandoen laver to filer - det er kun ChittyChat.pb-filen der skal beholdes - den anden fil hedder ..._grpc.pb.
+
   Den laver nok pbfilen i en forkert mappe, men den skal bare rykkes til den rigtige chat-mappe og 
   overskrive den der er, så kan du slette den "nye" generede mappe. Herfra skal koden ændres, der 
   hvor der vil være fejl til at modtage en timestamp istedet for en en int som nu. J
@@ -37,7 +40,7 @@ message ClientMessage {
   int32 clientId = 1;
   string userName = 2;
   string msg = 3;
-  string timestamp = 4; // TIMECHAR: Turn this into a timestamp object = 4; 
+  int32 lamport_timestamp = 4; // TIMECHAR: Turn this into a timestamp object = 4; 
 }
 
 /* 
@@ -45,8 +48,8 @@ message ClientMessage {
 */
 message ChatRoomMessages {
   string msg = 1;
-  string timestamp = 2; // TIMECHAR: Turn this into a timestamp object= 2; 
-  string username =3;
+  int32 lamport_timestamp = 2; // TIMECHAR: Turn this into a timestamp object= 2; 
+  string username = 3;
 
 }
 

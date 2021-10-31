@@ -47,4 +47,3 @@ func main() {
 func Output(input string) {
 	fmt.Println(input)
 }
-
