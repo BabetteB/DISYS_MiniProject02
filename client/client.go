@@ -9,6 +9,7 @@ import (
 
 	logger "github.com/BabetteB/DISYS_MiniProject02/logFile"
 
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
@@ -42,7 +43,6 @@ func main() {
 	Output(fmt.Sprintf("You have id #%v", ID))
 
 	go ServerObserver(c)
-
 	Output("Connection to server was successful! Ready to chat!")
 
 	go ServerRequester(c)
@@ -94,6 +94,7 @@ Press Ctrl + C to leave!
 }
 
 func LimitReader(s string) string {
+
 	limit := 128
 
 	reader := strings.NewReader(s)
@@ -131,9 +132,11 @@ func Welcome(input string) {
 }
 
 func FormatToChat(user, msg string, timestamp string) string {
+
 	return fmt.Sprintf("%v - %v:  %v", timestamp, user, msg)
 }
 
 func Output(input string) {
 	fmt.Println(input)
 }
+

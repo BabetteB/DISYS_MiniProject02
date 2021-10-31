@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	logger "github.com/BabetteB/DISYS_MiniProject02/logFile"
+
 	"github.com/BabetteB/DISYS_MiniProject02/chat"
 	"google.golang.org/grpc"
 )
@@ -19,6 +20,7 @@ func main() {
 		logger.ErrorLogger.Fatalf("FATAL: Connection unable to establish. Failed to listen: %v", err)
 	}
 	logger.InfoLogger.Println("Connection established through TCP, listening at port 3000", )
+
 
 	s := chat.Server{}
 
@@ -38,9 +40,11 @@ func main() {
 	var o string
 	fmt.Scanln(&o)
 	logger.InfoLogger.Println("Exit successfull. Server closing...")
+
 	os.Exit(3)	
 }
 
 func Output(input string) {
 	fmt.Println(input)
 }
+
