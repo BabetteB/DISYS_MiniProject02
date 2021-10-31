@@ -25,6 +25,7 @@ import "enums.proto";
 import "google/protobuf/empty.proto";
 
 
+
 service ChittyChatService {
   rpc Publish(ClientMessage) returns (StatusMessage) {}
   rpc Broadcast(google.protobuf.Empty) returns (ChatRoomMessages) {}
@@ -40,7 +41,7 @@ message ClientMessage {
   int32 clientId = 1;
   string userName = 2;
   string msg = 3;
-  int32 lamport_timestamp = 4; // TIMECHAR: Turn this into a timestamp object = 4; 
+  int32 lamportTimestamp = 4; // TIMECHAR: Turn this into a timestamp object = 4; 
 }
 
 /* 
@@ -48,7 +49,7 @@ message ClientMessage {
 */
 message ChatRoomMessages {
   string msg = 1;
-  int32 lamport_timestamp = 2; // TIMECHAR: Turn this into a timestamp object= 2; 
+  int32 lamportTimestamp = 2; // TIMECHAR: Turn this into a timestamp object= 2; 
   string username = 3;
 
 }

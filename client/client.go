@@ -12,7 +12,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/BabetteB/DISYS_MiniProject02/chat"
+	chat "github.com/BabetteB/DISYS_MiniProject02/chat"
 	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 )
 
@@ -62,7 +62,7 @@ func ServerObserver(c chat.ChittyChatServiceClient) {
 		}
 		chatLog := response.Msg
 		if chatLog != "" && chatLog != lastMsg {
-			Output(FormatToChat(response.Username, response.Msg, response.Timestamp))
+			Output(FormatToChat(response.Username, response.Msg, response.LamportTimestamp))
 		}
 		lastMsg = chatLog
 	}
@@ -111,7 +111,7 @@ func LimitReader(s string) string {
 func EnterUsername() {
 	user = UserInput()
 	Welcome(user)
-	logger.InfoLogger.Printf("User registred: %v", user)
+	//logger.InfoLogger.Printf("User registred: %v", user) /// BAAAAARBETSE:P
 }
 
 func UserInput() string {
@@ -129,8 +129,8 @@ func Welcome(input string) {
 	Output("Welcome to the chat " + input)
 }
 
-func FormatToChat(user, msg string, timestamp string) string {
-	return fmt.Sprintf("%v - %v:  %v", timestamp, user, msg)
+func FormatToChat(user, msg string, timestamp int32) string {
+	return fmt.Sprintf("%d - %v:  %v", timestamp, user, msg)
 }
 
 func Output(input string) {

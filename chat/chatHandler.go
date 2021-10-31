@@ -14,18 +14,10 @@ var (
 )
 
 type Server struct {
-	timestamp lamport_timestamp
+	timestamp LamportTimestamp
 }
 
-// used in the client as well - maybe move to seperate file? + its functions?
-type lamport_timestamp struct {
-	id        int32
-	timestamp int32
-}
 
-func (s *Server) setServer() {
-	s.timestamp.id = 0
-}
 
 func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage, error) {
 	logger.InfoLogger.Printf("Received message from client: %v", in.Msg)
@@ -35,14 +27,14 @@ func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage
 	broadcastMessage = in.Msg
 	broadcaster = in.UserName
 	isNewMessage = true
-	s.timestamp.timestamp += 1
+	tick(&s.timestamp)
 	logger.InfoLogger.Println("Response successfull")
 	return &response, nil
 }
 
 func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*ChatRoomMessages, error) {
 	receivers := 0
-	s.timestamp.timestamp += 1
+	tick(&s.timestamp)
 	logger.InfoLogger.Println("Requesting brodcast")
 	if isNewMessage {
 		receivers++
@@ -50,14 +42,14 @@ func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*Cha
 			isNewMessage = false
 			receivers = 0
 		}
-    logger.InfoLogger.Println("Brodcast successfull")
+		logger.InfoLogger.Println("Brodcast successfull")
 		return &ChatRoomMessages{
 			Msg:              broadcastMessage,
 			LamportTimestamp: s.timestamp.timestamp,
 			Username:         broadcaster,
 		}, nil
 	} else {
-    logger.WarningLogger.Println("Bodcasting empty message and empty user")
+		logger.WarningLogger.Println("Bodcasting empty message and empty user")
 		return &ChatRoomMessages{
 			Msg:              "",
 			LamportTimestamp: s.timestamp.timestamp,
