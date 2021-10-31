@@ -23,8 +23,19 @@ type lamport_timestamp struct {
 	timestamp int32
 }
 
-func (s *Server) setServer() {
-	s.timestamp.id = 0
+func tick(l *lamport_timestamp) {
+	l.timestamp += 1
+}
+
+// message is the given message being sent with the timestamp to the other process
+func recieving(recieveLamp *lamport_timestamp, sendingLamp *lamport_timestamp, message string) {
+	// if timestamp of msg sent is greater than timestamp of the recieving end
+	// then set recieving timestamp to msg sent timestamp+1 - else increment recieving with one.
+	if sendingLamp.timestamp > recieveLamp.timestamp {
+		recieveLamp.timestamp = sendingLamp.timestamp + 1
+	} else {
+		tick(recieveLamp)
+	}
 }
 
 func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage, error) {
@@ -35,14 +46,14 @@ func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage
 	broadcastMessage = in.Msg
 	broadcaster = in.UserName
 	isNewMessage = true
-	s.timestamp.timestamp += 1
+	tick(&s.timestamp)
 	logger.InfoLogger.Println("Response successfull")
 	return &response, nil
 }
 
 func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*ChatRoomMessages, error) {
 	receivers := 0
-	s.timestamp.timestamp += 1
+	tick(&s.timestamp)
 	logger.InfoLogger.Println("Requesting brodcast")
 	if isNewMessage {
 		receivers++
@@ -50,14 +61,14 @@ func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*Cha
 			isNewMessage = false
 			receivers = 0
 		}
-    logger.InfoLogger.Println("Brodcast successfull")
+		logger.InfoLogger.Println("Brodcast successfull")
 		return &ChatRoomMessages{
 			Msg:              broadcastMessage,
 			LamportTimestamp: s.timestamp.timestamp,
 			Username:         broadcaster,
 		}, nil
 	} else {
-    logger.WarningLogger.Println("Bodcasting empty message and empty user")
+		logger.WarningLogger.Println("Bodcasting empty message and empty user")
 		return &ChatRoomMessages{
 			Msg:              "",
 			LamportTimestamp: s.timestamp.timestamp,
