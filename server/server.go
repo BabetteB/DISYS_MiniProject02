@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	logger.logFileInit()
+	logger.LogFileInit()
 
 	Output("Server started")
 
