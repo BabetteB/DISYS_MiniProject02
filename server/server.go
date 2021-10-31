@@ -20,7 +20,6 @@ func main() {
 	}
 
 	s := chat.Server{}
-	chat.setServer(s)
 
 	grpcServer := grpc.NewServer()
 
