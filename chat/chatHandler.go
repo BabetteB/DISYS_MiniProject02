@@ -1,9 +1,7 @@
 package chat
 
 import (
-	//"log"
-
-
+	logger  "github.com/BabetteB/DISYS_MiniProject02/logFile"
 	"golang.org/x/net/context"
 	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 )
@@ -21,10 +19,12 @@ var (
 
 
 type Server struct {
+	logger.InfoLogger("Server initialized")
 }
 
 func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage, error) {
-	//log.Printf("Receive message body from client: %s", in.Body)
+	log.InfoLogger("Received message from client: %s", in.Body)
+
 	response := StatusMessage{ 
 		Operation: "Operation: Publish",
 		Status: Status_SUCCESS};
@@ -32,11 +32,12 @@ func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage
 	broadcaster = in.UserName 
 	isNewMessage = true
 	// println(broadcastMessage) // Test
+	log.InfoLogger("Response successfull")
 	return &response, nil
 }
 
 func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*ChatRoomMessages, error) {
-	// log.Printf("")
+	logger.InfoLogger()
 	receivers := 0;
 	if isNewMessage {
 		receivers++

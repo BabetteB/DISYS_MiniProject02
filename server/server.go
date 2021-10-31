@@ -1,8 +1,8 @@
 package main
 
 import (
+	log  "github.com/BabetteB/DISYS_MiniProject02/logFile"
 	"fmt"
-	"log"
 	"net"
 	"os"
 
@@ -11,13 +11,15 @@ import (
 )
 
 func main() {
+	logFileInit()
 
 	Output("Server started")
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 3000))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.ErrorLogger.Fatalf("FATAL: Connection unable to establish. Failed to listen: %v", err)
 	}
+	log.InfoLogger("Connection established through TCP, listening at port 3000", )
 
 	s := chat.Server{}
 
@@ -27,7 +29,7 @@ func main() {
 
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %s", err)
+			log.ErrorLogger.Fatalf("FATAL: Server connection failed: %s", err)
 		}
 	}()
 	
@@ -36,7 +38,7 @@ func main() {
 
 	var o string
 	fmt.Scanln(&o)
-	// Log exit
+	log.InfoLogger.Println("Exit successfull. Server closing...")
 	os.Exit(3)	
 }
 
