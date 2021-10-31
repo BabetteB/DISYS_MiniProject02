@@ -1,0 +1,69 @@
+/* 
+  OBS Charlotte - i protofilen har jeg lavet et Mock timestamp, som bare er en int. Når du skal 
+  implementerer den del skal du generere en ny .pb-fil med kommandoen (i den rigtige mappe hvor 
+  proto-filen er):
+
+    - protoc --go_out=plugins=grpc:chat ChittyChat.proto
+
+  Den laver nok pbfilen i en forkert mappe, men den skal bare rykkes til den rigtige chat-mappe og 
+  overskrive den der er, så kan du slette den "nye" generede mappe. Herfra skal koden ændres, der 
+  hvor der vil være fejl til at modtage en timestamp istedet for en en int som nu. J
+  eg efter lader kommentarer hvor det er med ordne "TIMECHAR".
+
+  SLET DENNE KOMMENTAR INDEN AFLEVERING!!!!
+*/
+
+syntax = "proto3";
+package main;
+
+option go_package = "./chat"; // Cannot make it generate in the rigth folder. This path works though.
+
+import "enums.proto";
+import "google/protobuf/empty.proto";
+
+
+service ChittyChatService {
+  rpc Publish(ClientMessage) returns (StatusMessage) {}
+  rpc Broadcast(google.protobuf.Empty) returns (ChatRoomMessages) {}
+  rpc Connect(UserInfo) returns (StatusMessage) {}
+  rpc Disconnect(UserInfo) returns (StatusMessage) {}
+}
+
+/* 
+  Publish message - the reason for sending both id and name, is to confirm server data, and to prepare 
+  client for a change username feature.
+*/
+message ClientMessage {
+  int32 clientId = 1;
+  string userName = 2;
+  string msg = 3;
+  string timestamp = 4; // TIMECHAR: Turn this into a timestamp object = 4; 
+}
+
+/* 
+  Message from the user to the server -> chatroom.
+*/
+message ChatRoomMessages {
+  string msg = 1;
+  string timestamp = 2; // TIMECHAR: Turn this into a timestamp object= 2; 
+  string username =3;
+
+}
+
+/*
+  String describing what the server tried to do. Enum with a status - succes/failure/invalid.
+*/
+message StatusMessage {
+  string operation = 1;
+  Status status = 2;
+  optional int32 NewId = 3;
+}
+
+/*
+  Username for subscribing/cennecting to a server. The id is optional and there to help the server 
+  avoid dublicates and change usernames.
+*/
+message UserInfo {
+  string name = 1;
+  optional int32 id = 2;
+}

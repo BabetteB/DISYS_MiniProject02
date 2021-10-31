@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "./chat";
+
+package main;
+
+
+enum Status {
+    INVALID = 0;
+    SUCCESS = 1;
+    FAILURE = 2;
+}

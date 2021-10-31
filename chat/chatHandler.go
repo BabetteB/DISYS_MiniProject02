@@ -1,86 +1,82 @@
 package chat
 
 import (
-	"golang.org/x/net/context"
+	logger "github.com/BabetteB/DISYS_MiniProject02/logFile"
 	google_protobuf "github.com/golang/protobuf/ptypes/empty"
+	"golang.org/x/net/context"
 )
 
 const (
-	mockTimestamp = "2021-10-29 00:00:00";
-) 
-
-var (
-	broadcastMessage = "";
-	broadcaster = "";
-	isNewMessage bool;
-	clients = make(map[int32] string);
+	mockTimestamp = "2021-10-29 00:00:00"
 )
 
+var (
+	broadcastMessage = ""
+	broadcaster      = ""
+	isNewMessage     bool
+	clients          = make(map[int32]string)
+)
 
-type Server struct {
-	//logger.InfoLogger("Server initialized")
-}
+type Server struct{}
 
 func (s *Server) Publish(ctx context.Context, in *ClientMessage) (*StatusMessage, error) {
-	logFile.infoLogger("Received message from client: %s", in.Body)
+	logger.InfoLogger.Printf("Received message from client: %v", in.Msg)
 
-	response := StatusMessage{ 
+	response := StatusMessage{
 		Operation: "Operation: Publish",
-		Status: Status_SUCCESS};
+		Status:    Status_SUCCESS}
 	broadcastMessage = in.Msg
-	broadcaster = in.UserName 
+	broadcaster = in.UserName
 	isNewMessage = true
 	// println(broadcastMessage) // Test
-	log.InfoLogger("Response successfull")
+	logger.InfoLogger.Println("Response successfull")
 	return &response, nil
 }
 
 func (s *Server) Broadcast(ctx context.Context, in *google_protobuf.Empty) (*ChatRoomMessages, error) {
-	logger.InfoLogger("Request for brodcast in chatHandler")
-	receivers := 0;
+	logger.InfoLogger.Println("Requesting brodcast")
+	receivers := 0
 	if isNewMessage {
 		receivers++
-		if(receivers == len(clients)) {
+		if receivers == len(clients) {
 			isNewMessage = false
 			receivers = 0
 		}
-		logger.InfoLogger("Message successfully brodcastet")
+		logger.InfoLogger.Println("Brodcast successfull")
 		return &ChatRoomMessages{
-			Msg: broadcastMessage,
+			Msg:       broadcastMessage,
 			Timestamp: mockTimestamp,
-			Username: broadcaster,
-			}, nil
+			Username:  broadcaster,
+		}, nil
 	} else {
-		logger.WarningLogger("Empty message and empty user is being brodcastet")
+		logger.WarningLogger.Println("Bodcasting empty message and empty user")
 		return &ChatRoomMessages{
-			Msg: "",
+			Msg:       "",
 			Timestamp: mockTimestamp,
-			Username: "",
-			}, nil
-	}	
+			Username:  "",
+		}, nil
+	}
 }
 
 func (s *Server) Connect(ctx context.Context, in *UserInfo) (*StatusMessage, error) {
-	logger.InfoLogger("Request for connection in chatHandler")
-
-	var newId int32 = int32(len(clients)+1)
+	logger.InfoLogger.Println("Requesting connection")
+	var newId int32 = int32(len(clients) + 1)
 	clients[newId] = in.Name
 	response := StatusMessage{
 		Operation: "Operation: Connect",
-		Status: Status_SUCCESS,
-		NewId: &newId,
+		Status:    Status_SUCCESS,
+		NewId:     &newId,
 	}
-	logger.InfoLogger("Connection status: %s", Status)
+	logger.InfoLogger.Printf("Connection status: %s", Status_SUCCESS)
 	return &response, nil
 }
 
 func (s *Server) Disconnect(ctx context.Context, in *UserInfo) (*StatusMessage, error) {
-	logger.InfoLogger("Request for disconnection in chatHandler")
+	logger.InfoLogger.Println("Requesting disconnection")
 	response := StatusMessage{
 		Operation: "Operation: Disconnect",
-		Status: Status_SUCCESS,
+		Status:    Status_SUCCESS,
 	}
-	logger.InfoLogger("Disconnection status: %s", Status)
+	logger.InfoLogger.Printf("Disconnection status: %s", Status_SUCCESS)
 	return &response, nil
 }
-
