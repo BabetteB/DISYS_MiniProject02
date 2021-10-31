@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
+
+	logger "github.com/BabetteB/DISYS_MiniProject02/logFile"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -29,7 +30,7 @@ func main() {
 	var conn *grpc.ClientConn
 	conn, err := grpc.Dial(":3000", grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %s", err)
+		logger.ErrorLogger.Printf("did not connect: %s", err)
 	}
 	defer conn.Close()
 
@@ -41,7 +42,6 @@ func main() {
 	Output(fmt.Sprintf("You have id #%v", ID))
 
 	go ServerObserver(c)
-
 	Output("Connection to server was successful! Ready to chat!")
 
 	go ServerRequester(c)
@@ -58,7 +58,7 @@ func ServerObserver(c chat.ChittyChatServiceClient) {
 	for {
 		response, err := c.Broadcast(context.Background(), new(google_protobuf.Empty))
 		if err != nil {
-			log.Fatalf("Error when calling Broadcast: %s", err)
+			logger.ErrorLogger.Printf("Error when calling Broadcast: %s", err)
 		}
 		chatLog := response.Msg
 		if chatLog != "" && chatLog != lastMsg {
@@ -78,7 +78,7 @@ func ServerRequester(c chat.ChittyChatServiceClient) {
 			Msg:      chatMsg,
 		})
 		if err != nil {
-			log.Fatalf("Error when calling Publish: %s", err)
+			logger.ErrorLogger.Printf("Error when calling Publish: %s", err)
 		}
 		//log.Printf("Response from server: %s", response.Body)
 	}
@@ -111,13 +111,14 @@ func LimitReader(s string) string {
 func EnterUsername() {
 	user = UserInput()
 	Welcome(user)
+	logger.InfoLogger.Printf("User registred: %v", user)
 }
 
 func UserInput() string {
 	reader := bufio.NewReader(os.Stdin)
 	msg, err := reader.ReadString('\n')
 	if err != nil {
-		log.Fatalf(" Failed to read from console :: %v", err)
+		logger.ErrorLogger.Printf(" Failed to read from console :: %v", err)
 	}
 	msg = strings.Trim(msg, "\r\n")
 
