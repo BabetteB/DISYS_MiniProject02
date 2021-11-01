@@ -3,7 +3,7 @@
   implementerer den del skal du generere en ny .pb-fil med kommandoen (i den rigtige mappe hvor 
   proto-filen er):
 
-    - protoc --go_out=plugins=grpc:chat ChittyChat.proto
+    - protoc --go_out=. --go_opt=paths=source_relative     --go-grpc_out=. --go-grpc_opt=paths=source_relative     ChittyChat.proto
 
     protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ChittyChat.proto
       kommandoen laver to filer - det er kun ChittyChat.pb-filen der skal beholdes - den anden fil hedder ..._grpc.pb.

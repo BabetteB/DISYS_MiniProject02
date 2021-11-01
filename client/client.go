@@ -20,7 +20,6 @@ import (
 var (
 	ID     int32
 	user   string
-	closed bool
 )
 
 func main() {
@@ -51,7 +50,8 @@ func main() {
 	ch := clienthandle{stream: stream}
 	//ch.clientConfig()
 	go ch.sendMessage()
-	//go ch.receiveMessage()
+	go ch.recvStatus()
+	// go ch.receiveMessage()
 
 	//blocker
 	bl := make(chan bool)
@@ -62,6 +62,21 @@ type clienthandle struct {
 	stream     chat.ChittyChatService_PublishClient
 	clientName string
 }
+
+func (ch *clienthandle) recvStatus() {
+	//create a loop
+	for {
+		mssg, err := ch.stream.Recv()
+		if err != nil {
+			//log.Printf("Error in receiving message from server :: %v", err)
+		}
+
+		//print message to console
+		Output(fmt.Sprintf("%s : %s \n", mssg.Operation, mssg.Status))
+		
+	}
+}
+
 
 func (ch *clienthandle) sendMessage() {
 
