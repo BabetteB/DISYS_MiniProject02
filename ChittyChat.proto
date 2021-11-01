@@ -22,15 +22,13 @@ package main;
 option go_package = "./chat"; // Cannot make it generate in the rigth folder. This path works though.
 
 import "enums.proto";
-import "google/protobuf/empty.proto";
+// import "google/protobuf/empty.proto";
 
 
 
 service ChittyChatService {
-  rpc Publish(ClientMessage) returns (StatusMessage) {}
-  rpc Broadcast(google.protobuf.Empty) returns (ChatRoomMessages) {}
-  rpc Connect(UserInfo) returns (StatusMessage) {}
-  rpc Disconnect(UserInfo) returns (StatusMessage) {}
+  rpc Publish(stream ClientMessage) returns (stream StatusMessage) {}
+  rpc Broadcast(stream StatusMessage) returns (stream ChatRoomMessages) {}
 }
 
 /* 
@@ -63,11 +61,4 @@ message StatusMessage {
   optional int32 NewId = 3;
 }
 
-/*
-  Username for subscribing/cennecting to a server. The id is optional and there to help the server 
-  avoid dublicates and change usernames.
-*/
-message UserInfo {
-  string name = 1;
-  optional int32 id = 2;
-}
+

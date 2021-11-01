@@ -21,12 +21,12 @@ func main() {
 	}
 	logger.InfoLogger.Println("Connection established through TCP, listening at port 3000", )
 
-
 	s := chat.Server{}
 
 	grpcServer := grpc.NewServer()
 
 	chat.RegisterChittyChatServiceServer(grpcServer, &s)
+
 
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {

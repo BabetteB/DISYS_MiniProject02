@@ -13,8 +13,9 @@ import (
 	"google.golang.org/grpc"
 
 	chat "github.com/BabetteB/DISYS_MiniProject02/chat"
-	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 )
+
+//google_protobuf "github.com/golang/protobuf/ptypes/empty"
 
 var (
 	ID     int32
@@ -36,24 +37,72 @@ func main() {
 
 	c := chat.NewChittyChatServiceClient(conn)
 
-	response, _ := c.Connect(context.Background(), &chat.UserInfo{
-		Name: user})
-	ID = *response.NewId
-	Output(fmt.Sprintf("You have id #%v", ID))
+	/* 	response, _ := c.Connect(context.Background(), &chat.UserInfo{
+	   		Name: user})
+	   	ID = *response.NewId
+	   	Output(fmt.Sprintf("You have id #%v", ID)) */
 
-	go ServerObserver(c)
-	Output("Connection to server was successful! Ready to chat!")
-
-	go ServerRequester(c)
-
-	for {
-		if closed {
-			break
-		}
+	stream, err := c.Publish(context.Background())
+	if err != nil {
+		//log.Fatalf("Failed to call ChatService :: %v", err)
 	}
+
+	// implement communication with gRPC server
+	ch := clienthandle{stream: stream}
+	//ch.clientConfig()
+	go ch.sendMessage()
+	//go ch.receiveMessage()
+
+	//blocker
+	bl := make(chan bool)
+	<-bl
 }
 
-func ServerObserver(c chat.ChittyChatServiceClient) {
+type clienthandle struct {
+	stream     chat.ChittyChatService_PublishClient
+	clientName string
+}
+
+func (ch *clienthandle) sendMessage() {
+
+	// create a loop
+	for {
+
+		clientMessage := UserInput()
+
+		clientMessageBox := &chat.ClientMessage{
+			ClientId:         123,
+			UserName:         "Babse",
+			Msg:              clientMessage,
+			LamportTimestamp: 1234,
+		}
+
+		err := ch.stream.Send(clientMessageBox)
+
+		if err != nil {
+			//log.Printf("Error while sending message to server :: %v", err)
+		}
+
+	}
+
+}
+
+/* func (ch *clienthandle) receiveMessage() {
+
+	//create a loop
+	for {
+		mssg, err := ch.stream.Recv()
+		if err != nil {
+			//log.Printf("Error in receiving message from server :: %v", err)
+		}
+
+		//print message to console
+		fmt.Printf("%s : %s \n",mssg.Name,mssg.Body)
+
+	}
+} */
+
+/* func ServerObserver(c chat.ChittyChatServiceClient) {
 	lastMsg := ""
 	for {
 		response, err := c.Broadcast(context.Background(), new(google_protobuf.Empty))
@@ -66,9 +115,9 @@ func ServerObserver(c chat.ChittyChatServiceClient) {
 		}
 		lastMsg = chatLog
 	}
-}
+} */
 
-func ServerRequester(c chat.ChittyChatServiceClient) {
+/* func ServerRequester(c chat.ChittyChatServiceClient) {
 	for {
 		chatMsg := UserInput()
 		var currentId int32 = ID
@@ -82,7 +131,7 @@ func ServerRequester(c chat.ChittyChatServiceClient) {
 		}
 		//log.Printf("Response from server: %s", response.Body)
 	}
-}
+} */
 
 func WelcomeMsg() string {
 	return `>>> WELCOME TO CHITTY CHAT <<<
