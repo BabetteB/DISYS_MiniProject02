@@ -49,7 +49,7 @@ message ChatRoomMessages {
   string msg = 1;
   int32 lamportTimestamp = 2; // TIMECHAR: Turn this into a timestamp object= 2; 
   string username = 3;
-
+  int32 clientId = 4;
 }
 
 /*

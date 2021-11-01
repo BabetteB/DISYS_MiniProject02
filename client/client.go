@@ -18,8 +18,10 @@ import (
 //google_protobuf "github.com/golang/protobuf/ptypes/empty"
 
 var (
-	ID     int32
-	user   string
+	ID             		int32  = 0
+	user           		string = ""
+	checkingStatus 		bool   = true // true: prints statusmessages
+	mockClientTimeStamp string = "XXXX/XX/XX XX:XX:XX"
 )
 
 func main() {
@@ -36,22 +38,28 @@ func main() {
 
 	c := chat.NewChittyChatServiceClient(conn)
 
-	/* 	response, _ := c.Connect(context.Background(), &chat.UserInfo{
-	   		Name: user})
-	   	ID = *response.NewId
-	   	Output(fmt.Sprintf("You have id #%v", ID)) */
-
-	stream, err := c.Publish(context.Background())
+	streamOut, err := c.Publish(context.Background())
+	if err != nil {
+		//log.Fatalf("Failed to call ChatService :: %v", err)
+	}
+	streamIn, err := c.Broadcast(context.Background())
 	if err != nil {
 		//log.Fatalf("Failed to call ChatService :: %v", err)
 	}
 
 	// implement communication with gRPC server
-	ch := clienthandle{stream: stream}
+	ch1 := clienthandle{
+		streamOut: streamOut,
+	}
+	ch2 := serverhandle{
+		streamIn: streamIn,
+	}
+
 	//ch.clientConfig()
-	go ch.sendMessage()
-	go ch.recvStatus()
-	// go ch.receiveMessage()
+	go ch1.sendMessage()
+	go ch1.recvStatus()
+	go ch2.receiveMessage()
+	go ch2.sendStatus()
 
 	//blocker
 	bl := make(chan bool)
@@ -59,24 +67,50 @@ func main() {
 }
 
 type clienthandle struct {
-	stream     chat.ChittyChatService_PublishClient
+	streamOut  chat.ChittyChatService_PublishClient
 	clientName string
+}
+
+type serverhandle struct {
+	streamIn   chat.ChittyChatService_BroadcastClient
+	serverName string
+}
+
+func (ch *serverhandle) sendStatus() {
+	for {
+		clientMessageBox := &chat.StatusMessage{
+			Operation: "BroadCast()",
+			Status:    chat.Status_SUCCESS,
+			NewId: &ID,
+		}
+
+		err := ch.streamIn.Send(clientMessageBox)
+
+		if err != nil {
+			//log.Printf("Error while sending message to server :: %v", err)
+		}
+
+	}
 }
 
 func (ch *clienthandle) recvStatus() {
 	//create a loop
 	for {
-		mssg, err := ch.stream.Recv()
+		mssg, err := ch.streamOut.Recv()
 		if err != nil {
 			//log.Printf("Error in receiving message from server :: %v", err)
 		}
 
-		//print message to console
-		Output(fmt.Sprintf("%s : %s \n", mssg.Operation, mssg.Status))
-		
+		// Recieving id from server 
+		if(ID == 0) {
+			ID = *mssg.NewId
+		}
+
+		if checkingStatus {
+			Output(fmt.Sprintf("%s : %s \n", mssg.Operation, mssg.Status)) 
+		}
 	}
 }
-
 
 func (ch *clienthandle) sendMessage() {
 
@@ -86,13 +120,13 @@ func (ch *clienthandle) sendMessage() {
 		clientMessage := UserInput()
 
 		clientMessageBox := &chat.ClientMessage{
-			ClientId:         123,
-			UserName:         "Babse",
+			ClientId:         ID,
+			UserName:         user,
 			Msg:              clientMessage,
-			LamportTimestamp: 1234,
+			LamportTimestamp: 12345,
 		}
 
-		err := ch.stream.Send(clientMessageBox)
+		err := ch.streamOut.Send(clientMessageBox)
 
 		if err != nil {
 			//log.Printf("Error while sending message to server :: %v", err)
@@ -102,51 +136,23 @@ func (ch *clienthandle) sendMessage() {
 
 }
 
-/* func (ch *clienthandle) receiveMessage() {
+func (ch *serverhandle) receiveMessage() {
 
 	//create a loop
 	for {
-		mssg, err := ch.stream.Recv()
+		mssg, err := ch.streamIn.Recv()
 		if err != nil {
 			//log.Printf("Error in receiving message from server :: %v", err)
 		}
+		senderUniqueCode := mssg.ClientId
 
-		//print message to console
-		fmt.Printf("%s : %s \n",mssg.Name,mssg.Body)
-
+		if (senderUniqueCode != ID) {
+			//print message to console - - use FormatToChat() when LamportTimestamp is implemented! CHAR
+			Output(fmt.Sprintf("%s %s says: %s \n", mockClientTimeStamp, mssg.Username, mssg.Msg))
+		}		
 	}
-} */
+}
 
-/* func ServerObserver(c chat.ChittyChatServiceClient) {
-	lastMsg := ""
-	for {
-		response, err := c.Broadcast(context.Background(), new(google_protobuf.Empty))
-		if err != nil {
-			logger.ErrorLogger.Printf("Error when calling Broadcast: %s", err)
-		}
-		chatLog := response.Msg
-		if chatLog != "" && chatLog != lastMsg {
-			Output(FormatToChat(response.Username, response.Msg, response.LamportTimestamp))
-		}
-		lastMsg = chatLog
-	}
-} */
-
-/* func ServerRequester(c chat.ChittyChatServiceClient) {
-	for {
-		chatMsg := UserInput()
-		var currentId int32 = ID
-		_, err := c.Publish(context.Background(), &chat.ClientMessage{
-			ClientId: currentId,
-			UserName: user,
-			Msg:      chatMsg,
-		})
-		if err != nil {
-			logger.ErrorLogger.Printf("Error when calling Publish: %s", err)
-		}
-		//log.Printf("Response from server: %s", response.Body)
-	}
-} */
 
 func WelcomeMsg() string {
 	return `>>> WELCOME TO CHITTY CHAT <<<
