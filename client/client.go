@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"os"
 	"strings"
@@ -36,19 +35,20 @@ type clienthandle struct {
 }
 
 func main() {
+	logger.LogFileInit()
 	Output(WelcomeMsg())
 
 	rand.Seed(time.Now().UnixNano())
 
 	client, err := makeClient(int32(rand.Intn(1e6)))
 	if err != nil {
-		log.Fatal(err)
+		logger.ErrorLogger.Fatalf("fatal error has occured : %v",err)
 	}
 	client.EnterUsername()
 
 	streamOut, err := client.clientService.Publish(context.Background())
 	if err != nil {
-		log.Fatalf("Failed to call ChatService :: %v", err)
+		logger.ErrorLogger.Fatalf("Failed to call ChatService :: %v", err)
 	}
 
 	// implement communication with gRPC server
@@ -57,7 +57,6 @@ func main() {
 	}
 
 	go client.receiveMessage()
-
 	go ch1.sendMessage(*client)
 	go ch1.recvStatus()
 
@@ -74,7 +73,7 @@ func (cc *ChatClient) receiveMessage() {
 	for {
 		if stream == nil {
 			if stream, err = cc.subscribe(); err != nil {
-				log.Printf("Failed to subscribe: %v", err)
+				logger.ErrorLogger.Fatalf("Failed to subscribe: %v", err)
 				cc.sleep()
 				// Retry on failure
 				continue
@@ -83,7 +82,7 @@ func (cc *ChatClient) receiveMessage() {
 		response, err := stream.Recv()
 
 		if err != nil {
-			log.Printf("Failed to receive message: %v", err)
+			logger.WarningLogger.Printf("Failed to receive message: %v", err)
 			// Clearing the stream will force the client to resubscribe on next iteration
 			stream = nil
 			cc.sleep()
@@ -100,7 +99,7 @@ func (cc *ChatClient) receiveMessage() {
 }
 
 func (c *ChatClient) subscribe() (protos.ChittyChatService_BroadcastClient, error) {
-	log.Printf("Subscribing client ID: %d", c.id)
+	logger.InfoLogger.Printf("Subscribing client ID: %d", c.id)
 	return c.clientService.Broadcast(context.Background(), &protos.Subscription{
 		ClientId: c.id,
 		UserName: c.clientName,
@@ -120,12 +119,13 @@ func makeClient(idn int32) (*ChatClient, error) {
 }
 
 func makeConnection() (*grpc.ClientConn, error) {
+	logger.InfoLogger.Print("Connecting to server...")
 	return grpc.Dial(":3000", []grpc.DialOption{grpc.WithInsecure(), grpc.WithBlock()}...)
 }
 
 func (c *ChatClient) close() {
 	if err := c.conn.Close(); err != nil {
-		log.Fatal(err)
+		logger.ErrorLogger.Fatalf("An error occured during closing connection: %v", err)
 	}
 }
 
@@ -134,7 +134,7 @@ func (ch *clienthandle) recvStatus() {
 	for {
 		mssg, err := ch.streamOut.Recv()
 		if err != nil {
-			log.Printf("Error in receiving message from server :: %v", err)
+			logger.ErrorLogger.Fatalf("Error in receiving message from server :: %v", err)
 		}
 
 		if checkingStatus {
@@ -158,7 +158,7 @@ func (ch *clienthandle) sendMessage(client ChatClient) {
 
 		err := ch.streamOut.Send(clientMessageBox)
 		if err != nil {
-			log.Printf("Error while sending message to server :: %v", err)
+			logger.WarningLogger.Printf("Error while sending message to server :: %v", err)
 		}
 
 	}
@@ -196,7 +196,7 @@ func LimitReader(s string) string {
 func (s *ChatClient) EnterUsername() {
 	s.clientName = UserInput()
 	Welcome(s.clientName)
-	//logger.InfoLogger.Printf("User registred: %v", user) /// BAAAAARBETSE:P
+	logger.InfoLogger.Printf("User registred: %s", s.clientName) /// BAAAAARBETSE:P
 }
 
 func UserInput() string {
