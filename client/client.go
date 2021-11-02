@@ -147,7 +147,6 @@ func (ch *clienthandle) sendMessage(client ChatClient) {
 	for {
 		clientMessage := UserInput()
 		protos.Tick(&client.lamport)
-		log.Printf("The clocking has ticked: %d", client.lamport.Timestamp)
 		clientMessageBox := &protos.ClientMessage{
 			ClientId:         client.id,
 			UserName:         client.clientName,
