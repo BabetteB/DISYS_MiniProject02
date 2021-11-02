@@ -91,7 +91,7 @@ func (cc *ChatClient) receiveMessage() {
 			continue
 		}
 		if response.ClientId != cc.id {
-
+			// det går galt her
 			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
 			Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
 		}
@@ -145,9 +145,9 @@ func (ch *clienthandle) recvStatus() {
 func (ch *clienthandle) sendMessage(client ChatClient) {
 	// create a loop
 	for {
+		clientMessage := UserInput()
 		protos.Tick(&client.lamport)
 		log.Printf("The clocking has ticked: %d", client.lamport.Timestamp)
-		clientMessage := UserInput()
 		clientMessageBox := &protos.ClientMessage{
 			ClientId:         client.id,
 			UserName:         client.clientName,
