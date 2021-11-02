@@ -4,84 +4,167 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"strings"
+	"time"
 
 	logger "github.com/BabetteB/DISYS_MiniProject02/logFile"
+	"github.com/BabetteB/DISYS_MiniProject02/protos"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-
-	chat "github.com/BabetteB/DISYS_MiniProject02/chat"
-	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 )
+
+//google_protobuf "github.com/golang/protobuf/ptypes/empty"
 
 var (
-	ID     int32
-	user   string
-	closed bool
+	checkingStatus bool
 )
 
+type ChatClient struct {
+	clientService protos.ChittyChatServiceClient
+	conn          *grpc.ClientConn // conn is the client gRPC connection
+	id            int32            // id is the client ID used for subscribing
+	clientName    string
+	lamport       protos.LamportTimestamp
+}
+
+type clienthandle struct {
+	streamOut protos.ChittyChatService_PublishClient
+}
+
 func main() {
+	logger.LogFileInit()
 	Output(WelcomeMsg())
-	EnterUsername()
-	Output("Connecting to server...")
 
-	var conn *grpc.ClientConn
-	conn, err := grpc.Dial(":3000", grpc.WithInsecure())
+	rand.Seed(time.Now().UnixNano())
+
+	client, err := makeClient(int32(rand.Intn(1e6)))
 	if err != nil {
-		logger.ErrorLogger.Printf("did not connect: %s", err)
+		logger.ErrorLogger.Fatalf("fatal error has occured : %v",err)
 	}
-	defer conn.Close()
+	client.EnterUsername()
 
-	c := chat.NewChittyChatServiceClient(conn)
+	streamOut, err := client.clientService.Publish(context.Background())
+	if err != nil {
+		logger.ErrorLogger.Fatalf("Failed to call ChatService :: %v", err)
+	}
 
-	response, _ := c.Connect(context.Background(), &chat.UserInfo{
-		Name: user})
-	ID = *response.NewId
-	Output(fmt.Sprintf("You have id #%v", ID))
+	// implement communication with gRPC server
+	ch1 := clienthandle{
+		streamOut: streamOut,
+	}
 
-	go ServerObserver(c)
-	Output("Connection to server was successful! Ready to chat!")
+	go client.receiveMessage()
+	go ch1.sendMessage(*client)
+	go ch1.recvStatus()
 
-	go ServerRequester(c)
+	//blocker
+	bl := make(chan bool)
+	<-bl
+}
+
+func (cc *ChatClient) receiveMessage() {
+	var err error
+	// stream is the client side of the RPC stream
+	var stream protos.ChittyChatService_BroadcastClient
 
 	for {
-		if closed {
-			break
+		if stream == nil {
+			if stream, err = cc.subscribe(); err != nil {
+				logger.ErrorLogger.Fatalf("Failed to subscribe: %v", err)
+				cc.sleep()
+				// Retry on failure
+				continue
+			}
+		}
+		response, err := stream.Recv()
+
+		if err != nil {
+			logger.WarningLogger.Printf("Failed to receive message: %v", err)
+			// Clearing the stream will force the client to resubscribe on next iteration
+			stream = nil
+			cc.sleep()
+			// Retry on failure
+			continue
+		}
+		if response.ClientId != cc.id {
+			// det går galt her
+			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
+			Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
 		}
 	}
 }
 
-func ServerObserver(c chat.ChittyChatServiceClient) {
-	lastMsg := ""
-	for {
-		response, err := c.Broadcast(context.Background(), new(google_protobuf.Empty))
-		if err != nil {
-			logger.ErrorLogger.Printf("Error when calling Broadcast: %s", err)
-		}
-		chatLog := response.Msg
-		if chatLog != "" && chatLog != lastMsg {
-			Output(FormatToChat(response.Username, response.Msg, response.LamportTimestamp))
-		}
-		lastMsg = chatLog
+func (c *ChatClient) subscribe() (protos.ChittyChatService_BroadcastClient, error) {
+	logger.InfoLogger.Printf("Subscribing client ID: %d", c.id)
+	return c.clientService.Broadcast(context.Background(), &protos.Subscription{
+		ClientId: c.id,
+		UserName: c.clientName,
+	})
+}
+
+func makeClient(idn int32) (*ChatClient, error) {
+	conn, err := makeConnection()
+	if err != nil {
+		return nil, err
+	}
+	return &ChatClient{
+		clientService: protos.NewChittyChatServiceClient(conn),
+		conn:          conn,
+		id:            idn,
+	}, nil
+}
+
+func makeConnection() (*grpc.ClientConn, error) {
+	logger.InfoLogger.Print("Connecting to server...")
+	return grpc.Dial(":3000", []grpc.DialOption{grpc.WithInsecure(), grpc.WithBlock()}...)
+}
+
+func (c *ChatClient) close() {
+	if err := c.conn.Close(); err != nil {
+		logger.ErrorLogger.Fatalf("An error occured during closing connection: %v", err)
 	}
 }
 
-func ServerRequester(c chat.ChittyChatServiceClient) {
+func (ch *clienthandle) recvStatus() {
+	//create a loop
 	for {
-		chatMsg := UserInput()
-		var currentId int32 = ID
-		_, err := c.Publish(context.Background(), &chat.ClientMessage{
-			ClientId: currentId,
-			UserName: user,
-			Msg:      chatMsg,
-		})
+		mssg, err := ch.streamOut.Recv()
 		if err != nil {
-			logger.ErrorLogger.Printf("Error when calling Publish: %s", err)
+			logger.ErrorLogger.Fatalf("Error in receiving message from server :: %v", err)
 		}
-		//log.Printf("Response from server: %s", response.Body)
+
+		if checkingStatus {
+			Output(fmt.Sprintf("%s : %s \n", mssg.Operation, mssg.Status))
+		}
 	}
+}
+
+func (ch *clienthandle) sendMessage(client ChatClient) {
+	// create a loop
+	for {
+		clientMessage := UserInput()
+		protos.Tick(&client.lamport)
+		clientMessageBox := &protos.ClientMessage{
+			ClientId:         client.id,
+			UserName:         client.clientName,
+			Msg:              clientMessage,
+			LamportTimestamp: client.lamport.Timestamp,
+		}
+
+		err := ch.streamOut.Send(clientMessageBox)
+		if err != nil {
+			logger.WarningLogger.Printf("Error while sending message to server :: %v", err)
+		}
+
+	}
+
+}
+
+func (c *ChatClient) sleep() {
+	time.Sleep(time.Second * 2)
 }
 
 func WelcomeMsg() string {
@@ -108,10 +191,10 @@ func LimitReader(s string) string {
 	}
 }
 
-func EnterUsername() {
-	user = UserInput()
-	Welcome(user)
-	//logger.InfoLogger.Printf("User registred: %v", user) /// BAAAAARBETSE:P
+func (s *ChatClient) EnterUsername() {
+	s.clientName = UserInput()
+	Welcome(s.clientName)
+	logger.InfoLogger.Printf("User registred: %s", s.clientName) /// BAAAAARBETSE:P
 }
 
 func UserInput() string {
@@ -135,4 +218,5 @@ func FormatToChat(user, msg string, timestamp int32) string {
 
 func Output(input string) {
 	fmt.Println(input)
+	fmt.Println("-------------------")
 }
