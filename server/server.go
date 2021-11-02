@@ -16,11 +16,13 @@ import (
 	"google.golang.org/grpc"
 )
 
+// burde nok have timestamp inkluderet...
 type message struct {
 	ClientUniqueCode  int32
 	ClientName        string
 	Msg               string
 	MessageUniqueCode int32
+	Lamport           int32
 }
 
 type raw struct {
@@ -88,7 +90,7 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 
 			senderUniqueCode := messageHandle.MQue[0].ClientUniqueCode
 			senderName4Client := messageHandle.MQue[0].ClientName
-			// LamportTimestamp :=
+			LamportTimestamp := messageHandle.MQue[0].Lamport
 			messageFromServer := messageHandle.MQue[0].Msg
 
 			messageHandle.mu.Unlock()
@@ -109,7 +111,7 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				// Send data over the gRPC stream to the client
 				if err := sub.stream.Send(&protos.ChatRoomMessages{
 					Msg:              messageFromServer,
-					LamportTimestamp: s.lamport.Timestamp,
+					LamportTimestamp: LamportTimestamp,
 					Username:         senderName4Client,
 					ClientId:         senderUniqueCode,
 				}); err != nil {
@@ -173,6 +175,7 @@ func receiveFromStream(srv protos.ChittyChatService_PublishServer, errch_ chan e
 				ClientName:        mssg.UserName,
 				Msg:               mssg.Msg,
 				MessageUniqueCode: int32(rand.Intn(1e6)), // Maybe delete
+				Lamport:           mssg.LamportTimestamp,
 			})
 
 			//log.Printf("%v", messageHandle.MQue[len(messageHandle.MQue)-1])

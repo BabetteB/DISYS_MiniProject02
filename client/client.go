@@ -91,10 +91,9 @@ func (cc *ChatClient) receiveMessage() {
 			continue
 		}
 		if response.ClientId != cc.id {
-			protos.RecievingOneLamportOneInt(&cc.lamport, response.LamportTimestamp)
-			// burde være response.Lamport.timestamp i stedet for cc.lamport.Timestamp
-			// reponse.LamportTimestamp er statisk (altså hele tiden på 2?? den burde kunne increments ved de tickede steder)
-			Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", response.LamportTimestamp, response.Username, response.Msg))
+
+			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
+			Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
 		}
 	}
 }
@@ -146,9 +145,9 @@ func (ch *clienthandle) recvStatus() {
 func (ch *clienthandle) sendMessage(client ChatClient) {
 	// create a loop
 	for {
-
-		clientMessage := UserInput()
 		protos.Tick(&client.lamport)
+		log.Printf("The clocking has ticked: %d", client.lamport.Timestamp)
+		clientMessage := UserInput()
 		clientMessageBox := &protos.ClientMessage{
 			ClientId:         client.id,
 			UserName:         client.clientName,
