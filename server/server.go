@@ -31,6 +31,7 @@ type raw struct {
 type Server struct {
 	protos.UnimplementedChittyChatServiceServer
 	subscribers sync.Map
+	lamport     protos.LamportTimestamp
 }
 
 type sub struct {
@@ -41,11 +42,12 @@ type sub struct {
 var messageHandle = raw{}
 
 var (
-	//mockServerTimeStamp string = "YYYY/YY/YY YY:YY:YY"
+//mockServerTimeStamp string = "YYYY/YY/YY YY:YY:YY"
 )
 
 func (s *Server) Broadcast(request *protos.Subscription, stream protos.ChittyChatService_BroadcastServer) error {
-	log.Printf("Received subscribe request from ID: %d", request.ClientId)
+	protos.Tick(&s.lamport)
+	log.Printf("Logical Timestamp: %d, Received subscribe request from ID: %d", s.lamport.Timestamp, request.ClientId)
 	fin := make(chan bool)
 
 	s.subscribers.Store(request.ClientId, sub{stream: stream, finished: fin})
@@ -53,21 +55,21 @@ func (s *Server) Broadcast(request *protos.Subscription, stream protos.ChittyCha
 	ctx := stream.Context()
 	go s.sendToClients(stream)
 
-
 	for {
 		select {
 		case <-fin:
-			log.Printf("Closing stream for client ID: %d", request.ClientId)
+			protos.Tick(&s.lamport)
+			log.Printf("Logical Timestamp: %d, Closing stream for client ID: %d", s.lamport.Timestamp, request.ClientId)
 			return nil
 		case <-ctx.Done():
-			log.Printf("Client ID %d has disconnected", request.ClientId)
+			protos.Tick(&s.lamport)
+			log.Printf("Logical Timestamp: %d, Client ID %d has disconnected", s.lamport.Timestamp, request.ClientId)
 			return nil
 		}
 	}
 }
 
-
-func (s *Server)sendToClients(srv protos.ChittyChatService_BroadcastServer) {
+func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 
 	//implement a loop
 	for {
@@ -107,7 +109,7 @@ func (s *Server)sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				// Send data over the gRPC stream to the client
 				if err := sub.stream.Send(&protos.ChatRoomMessages{
 					Msg:              messageFromServer,
-					LamportTimestamp: 321321,
+					LamportTimestamp: s.lamport.Timestamp,
 					Username:         senderName4Client,
 					ClientId:         senderUniqueCode,
 				}); err != nil {
@@ -123,11 +125,11 @@ func (s *Server)sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				}
 				return true
 			})
-	
+
 			// Unsubscribe erroneous client streams
 			for _, id := range unsubscribe {
 				s.subscribers.Delete(id)
-			} 
+			}
 
 			messageHandle.mu.Lock()
 
@@ -143,8 +145,6 @@ func (s *Server)sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 	}
 }
 
-
-
 func (s *Server) Publish(srv protos.ChittyChatService_PublishServer) error {
 
 	errch := make(chan error)
@@ -152,7 +152,6 @@ func (s *Server) Publish(srv protos.ChittyChatService_PublishServer) error {
 	// receive messages - init a go routine
 	go receiveFromStream(srv, errch)
 	go sendToStream(srv, errch)
-
 	return <-errch
 }
 
@@ -175,7 +174,6 @@ func receiveFromStream(srv protos.ChittyChatService_PublishServer, errch_ chan e
 				Msg:               mssg.Msg,
 				MessageUniqueCode: int32(rand.Intn(1e6)), // Maybe delete
 			})
-
 
 			//log.Printf("%v", messageHandle.MQue[len(messageHandle.MQue)-1])
 

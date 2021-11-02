@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 
@@ -20,20 +20,19 @@ import (
 //google_protobuf "github.com/golang/protobuf/ptypes/empty"
 
 var (
-	mockClientTimeStamp string = "XXXX/XX/XX XX:XX:XX"
 	checkingStatus bool
-
 )
 
 type ChatClient struct {
-	clientService protos.ChittyChatServiceClient 
-	conn   *grpc.ClientConn       // conn is the client gRPC connection
-	id     int32                  // id is the client ID used for subscribing
-	clientName string
+	clientService protos.ChittyChatServiceClient
+	conn          *grpc.ClientConn // conn is the client gRPC connection
+	id            int32            // id is the client ID used for subscribing
+	clientName    string
+	lamport       protos.LamportTimestamp
 }
 
 type clienthandle struct {
-	streamOut  protos.ChittyChatService_PublishClient
+	streamOut protos.ChittyChatService_PublishClient
 }
 
 func main() {
@@ -41,13 +40,11 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
-
 	client, err := makeClient(int32(rand.Intn(1e6)))
 	if err != nil {
 		log.Fatal(err)
 	}
 	client.EnterUsername()
-
 
 	streamOut, err := client.clientService.Publish(context.Background())
 	if err != nil {
@@ -64,7 +61,6 @@ func main() {
 	go ch1.sendMessage(*client)
 	go ch1.recvStatus()
 
-
 	//blocker
 	bl := make(chan bool)
 	<-bl
@@ -74,7 +70,7 @@ func (cc *ChatClient) receiveMessage() {
 	var err error
 	// stream is the client side of the RPC stream
 	var stream protos.ChittyChatService_BroadcastClient
-	
+
 	for {
 		if stream == nil {
 			if stream, err = cc.subscribe(); err != nil {
@@ -85,6 +81,7 @@ func (cc *ChatClient) receiveMessage() {
 			}
 		}
 		response, err := stream.Recv()
+
 		if err != nil {
 			log.Printf("Failed to receive message: %v", err)
 			// Clearing the stream will force the client to resubscribe on next iteration
@@ -93,8 +90,11 @@ func (cc *ChatClient) receiveMessage() {
 			// Retry on failure
 			continue
 		}
-		if(response.ClientId != cc.id) {
-			Output(fmt.Sprintf("%s %s says: %s \n", mockClientTimeStamp, response.Username, response.Msg))
+		if response.ClientId != cc.id {
+			protos.RecievingOneLamportOneInt(&cc.lamport, response.LamportTimestamp)
+			// burde være response.Lamport.timestamp i stedet for cc.lamport.Timestamp
+			// reponse.LamportTimestamp er statisk (altså hele tiden på 2?? den burde kunne increments ved de tickede steder)
+			Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", response.LamportTimestamp, response.Username, response.Msg))
 		}
 	}
 }
@@ -107,8 +107,6 @@ func (c *ChatClient) subscribe() (protos.ChittyChatService_BroadcastClient, erro
 	})
 }
 
-
-
 func makeClient(idn int32) (*ChatClient, error) {
 	conn, err := makeConnection()
 	if err != nil {
@@ -116,8 +114,8 @@ func makeClient(idn int32) (*ChatClient, error) {
 	}
 	return &ChatClient{
 		clientService: protos.NewChittyChatServiceClient(conn),
-		conn:   conn,
-		id:     idn,
+		conn:          conn,
+		id:            idn,
 	}, nil
 }
 
@@ -137,30 +135,28 @@ func (ch *clienthandle) recvStatus() {
 		mssg, err := ch.streamOut.Recv()
 		if err != nil {
 			log.Printf("Error in receiving message from server :: %v", err)
-		}	
+		}
 
 		if checkingStatus {
-			Output(fmt.Sprintf("%s : %s \n", mssg.Operation, mssg.Status)) 
+			Output(fmt.Sprintf("%s : %s \n", mssg.Operation, mssg.Status))
 		}
 	}
 }
 
 func (ch *clienthandle) sendMessage(client ChatClient) {
-
 	// create a loop
 	for {
 
 		clientMessage := UserInput()
-
+		protos.Tick(&client.lamport)
 		clientMessageBox := &protos.ClientMessage{
 			ClientId:         client.id,
 			UserName:         client.clientName,
 			Msg:              clientMessage,
-			LamportTimestamp: 12345,
+			LamportTimestamp: client.lamport.Timestamp,
 		}
 
 		err := ch.streamOut.Send(clientMessageBox)
-
 		if err != nil {
 			log.Printf("Error while sending message to server :: %v", err)
 		}
@@ -172,8 +168,6 @@ func (ch *clienthandle) sendMessage(client ChatClient) {
 func (c *ChatClient) sleep() {
 	time.Sleep(time.Second * 2)
 }
-
-
 
 func WelcomeMsg() string {
 	return `>>> WELCOME TO CHITTY CHAT <<<
@@ -199,7 +193,7 @@ func LimitReader(s string) string {
 	}
 }
 
-func (s *ChatClient)EnterUsername() {
+func (s *ChatClient) EnterUsername() {
 	s.clientName = UserInput()
 	Welcome(s.clientName)
 	//logger.InfoLogger.Printf("User registred: %v", user) /// BAAAAARBETSE:P
