@@ -1,4 +1,4 @@
-package chat
+package protos
 
 type LamportTimestamp struct {
 	id        int32
