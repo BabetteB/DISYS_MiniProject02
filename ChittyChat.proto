@@ -19,6 +19,7 @@ service ChittyChatService {
 message Subscription {
   int32 clientId = 1;
   string userName = 2;
+  int32 lamportTimestamp = 3;
 }
 
 message ClientMessage {

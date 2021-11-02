@@ -81,7 +81,6 @@ func (cc *ChatClient) receiveMessage() {
 			}
 		}
 		response, err := stream.Recv()
-
 		if err != nil {
 			log.Printf("Failed to receive message: %v", err)
 			// Clearing the stream will force the client to resubscribe on next iteration
@@ -91,9 +90,11 @@ func (cc *ChatClient) receiveMessage() {
 			continue
 		}
 		if response.ClientId != cc.id {
-			// det går galt her
-			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
-			Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
+			//result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
+			cc.lamport.RecieveTest(response.LamportTimestamp)
+			fmt.Printf("\n\n TimestamP : %d for client: %s", cc.lamport.Timestamp, cc.clientName)
+			cc.lamport.Timestamp = cc.lamport.Timestamp
+			Output(fmt.Sprintf("Logical Timestamp: %d, %s says: %s \n", cc.lamport.Timestamp, response.Username, response.Msg))
 		}
 	}
 }
@@ -101,8 +102,9 @@ func (cc *ChatClient) receiveMessage() {
 func (c *ChatClient) subscribe() (protos.ChittyChatService_BroadcastClient, error) {
 	log.Printf("Subscribing client ID: %d", c.id)
 	return c.clientService.Broadcast(context.Background(), &protos.Subscription{
-		ClientId: c.id,
-		UserName: c.clientName,
+		ClientId:         c.id,
+		UserName:         c.clientName,
+		LamportTimestamp: c.lamport.Timestamp,
 	})
 }
 
@@ -146,8 +148,8 @@ func (ch *clienthandle) sendMessage(client ChatClient) {
 	// create a loop
 	for {
 		clientMessage := UserInput()
-		protos.Tick(&client.lamport)
-		log.Printf("The clocking has ticked: %d", client.lamport.Timestamp)
+		client.lamport.Tick()
+		fmt.Printf("Timestamp ticked: %d,", client.lamport.Timestamp)
 		clientMessageBox := &protos.ClientMessage{
 			ClientId:         client.id,
 			UserName:         client.clientName,
@@ -194,6 +196,7 @@ func LimitReader(s string) string {
 
 func (s *ChatClient) EnterUsername() {
 	s.clientName = UserInput()
+	s.lamport.Tick()
 	Welcome(s.clientName)
 	//logger.InfoLogger.Printf("User registred: %v", user) /// BAAAAARBETSE:P
 }

@@ -48,7 +48,7 @@ var (
 )
 
 func (s *Server) Broadcast(request *protos.Subscription, stream protos.ChittyChatService_BroadcastServer) error {
-	protos.Tick(&s.lamport)
+	s.lamport.RecieveTest(request.LamportTimestamp) // the server is recieving a message of a new client joining
 	log.Printf("Logical Timestamp: %d, Received subscribe request from ID: %d", s.lamport.Timestamp, request.ClientId)
 	fin := make(chan bool)
 
@@ -60,11 +60,11 @@ func (s *Server) Broadcast(request *protos.Subscription, stream protos.ChittyCha
 	for {
 		select {
 		case <-fin:
-			protos.Tick(&s.lamport)
+			s.lamport.Tick()
 			log.Printf("Logical Timestamp: %d, Closing stream for client ID: %d", s.lamport.Timestamp, request.ClientId)
 			return nil
 		case <-ctx.Done():
-			protos.Tick(&s.lamport)
+			s.lamport.Tick()
 			log.Printf("Logical Timestamp: %d, Client ID %d has disconnected", s.lamport.Timestamp, request.ClientId)
 			return nil
 		}
@@ -87,10 +87,13 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				messageHandle.mu.Unlock()
 				break
 			}
-
+			fmt.Printf("sending client timestamp: %d", messageHandle.MQue[0].Lamport)
+			s.lamport.RecieveTest(messageHandle.MQue[0].Lamport)
+			s.lamport.Tick()
+			fmt.Printf("result from the lamport function: %d ,", s.lamport.Timestamp)
 			senderUniqueCode := messageHandle.MQue[0].ClientUniqueCode
 			senderName4Client := messageHandle.MQue[0].ClientName
-			LamportTimestamp := messageHandle.MQue[0].Lamport
+			LamportTimestamp := s.lamport.Timestamp
 			messageFromServer := messageHandle.MQue[0].Msg
 
 			messageHandle.mu.Unlock()
@@ -167,7 +170,6 @@ func receiveFromStream(srv protos.ChittyChatService_PublishServer, errch_ chan e
 			errch_ <- err
 		} else {
 			id := mssg.ClientId
-
 			messageHandle.mu.Lock()
 
 			messageHandle.MQue = append(messageHandle.MQue, message{
