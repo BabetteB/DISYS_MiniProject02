@@ -14,6 +14,14 @@ import (
 	"google.golang.org/grpc"
 )
 
+/*
+MessageCode:
+1 - client joined server
+2 - Chat
+3 - client left server
+4 - Server closing
+*/
+
 // burde nok have timestamp inkluderet... ??????????????????????
 type message struct {
 	ClientUniqueCode int32
@@ -48,8 +56,9 @@ func (s *Server) Broadcast(request *protos.Subscription, stream protos.ChittyCha
 
 	s.subscribers.Store(request.ClientId, sub{stream: stream, finished: fin})
 
-	// If clientid is -100 the other clients knows that another client has joined.
+	// Connecting
 	addToMessageQueue(request.ClientId, s.lamport.Timestamp, 1, request.UserName, "")
+	Output(fmt.Sprintf("ID: %v Name: %v, joined chat at timestamp %d", request.ClientId, request.UserName, s.lamport.Timestamp))
 
 	ctx := stream.Context()
 	go s.sendToClients(stream)
@@ -215,15 +224,16 @@ func (s *Server) Disconnect(ctx context.Context, request *protos.Subscription) (
 		return nil, fmt.Errorf("failed to cast subscriber value: %T", v)
 	}
 	select {
-	case sub.finished <- true:
-		println("Unsubscribed client: %d", request.ClientId)
-	default:
-		// Default case is to avoid blocking in case client has already unsubscribed
+		case sub.finished <- true:
+			println("Client %d disconnected", request.ClientId)
+		default:
+			// Default case is to avoid blocking in case client has already unsubscribed
 	}
 	s.subscribers.Delete(request.ClientId)
 
+	// Noget her skal ændres	
 	return &protos.StatusMessage{
-		Operation: "Connect()",
+		Operation: "Disconnected()",
 		Status:    protos.Status_SUCCESS,
 	}, nil
 }

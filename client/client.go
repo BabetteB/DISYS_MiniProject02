@@ -42,7 +42,7 @@ func main() {
 
 	client, err := makeClient(int32(rand.Intn(1e6)))
 	if err != nil {
-		logger.ErrorLogger.Fatalf("fatal error has occured : %v",err)
+		logger.ErrorLogger.Fatalf("fatal error has occured : %v", err)
 	}
 	client.EnterUsername()
 
@@ -88,9 +88,9 @@ func (cc *ChatClient) receiveMessage() {
 		}
 		if response.ClientId != cc.id {
 			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
-			if response.Code == 1{
-				Output(fmt.Sprintf("Logical Timestamp:%d, %s joined the server\n", result, response.Username))			
-			}else {
+			if response.Code == 1 {
+				Output(fmt.Sprintf("Logical Timestamp:%d, %s joined the server\n", result, response.Username))
+			} else {
 				// det går galt her
 				Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
 			}
@@ -195,7 +195,7 @@ func LimitReader(s string) string {
 func (s *ChatClient) EnterUsername() {
 	s.clientName = UserInput()
 	Welcome(s.clientName)
-	logger.InfoLogger.Printf("User registred: %s", s.clientName) 
+	logger.InfoLogger.Printf("User registred: %s", s.clientName)
 }
 
 func UserInput() string {
