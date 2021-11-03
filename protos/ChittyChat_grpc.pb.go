@@ -20,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion7
 type ChittyChatServiceClient interface {
 	Publish(ctx context.Context, opts ...grpc.CallOption) (ChittyChatService_PublishClient, error)
 	Broadcast(ctx context.Context, in *Subscription, opts ...grpc.CallOption) (ChittyChatService_BroadcastClient, error)
-	Disconnect(ctx context.Context, in *Subscription, opts ...grpc.CallOption) (*StatusMessage, error)
 }
 
 type chittyChatServiceClient struct {
@@ -94,22 +93,12 @@ func (x *chittyChatServiceBroadcastClient) Recv() (*ChatRoomMessages, error) {
 	return m, nil
 }
 
-func (c *chittyChatServiceClient) Disconnect(ctx context.Context, in *Subscription, opts ...grpc.CallOption) (*StatusMessage, error) {
-	out := new(StatusMessage)
-	err := c.cc.Invoke(ctx, "/main.ChittyChatService/Disconnect", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ChittyChatServiceServer is the server API for ChittyChatService service.
 // All implementations must embed UnimplementedChittyChatServiceServer
 // for forward compatibility
 type ChittyChatServiceServer interface {
 	Publish(ChittyChatService_PublishServer) error
 	Broadcast(*Subscription, ChittyChatService_BroadcastServer) error
-	Disconnect(context.Context, *Subscription) (*StatusMessage, error)
 	mustEmbedUnimplementedChittyChatServiceServer()
 }
 
@@ -122,9 +111,6 @@ func (UnimplementedChittyChatServiceServer) Publish(ChittyChatService_PublishSer
 }
 func (UnimplementedChittyChatServiceServer) Broadcast(*Subscription, ChittyChatService_BroadcastServer) error {
 	return status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
-}
-func (UnimplementedChittyChatServiceServer) Disconnect(context.Context, *Subscription) (*StatusMessage, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Disconnect not implemented")
 }
 func (UnimplementedChittyChatServiceServer) mustEmbedUnimplementedChittyChatServiceServer() {}
 
@@ -186,36 +172,13 @@ func (x *chittyChatServiceBroadcastServer) Send(m *ChatRoomMessages) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _ChittyChatService_Disconnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Subscription)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChittyChatServiceServer).Disconnect(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/main.ChittyChatService/Disconnect",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChittyChatServiceServer).Disconnect(ctx, req.(*Subscription))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ChittyChatService_ServiceDesc is the grpc.ServiceDesc for ChittyChatService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ChittyChatService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "main.ChittyChatService",
 	HandlerType: (*ChittyChatServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Disconnect",
-			Handler:    _ChittyChatService_Disconnect_Handler,
-		},
-	},
+	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Publish",

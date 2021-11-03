@@ -20,6 +20,7 @@ import (
 
 var (
 	checkingStatus bool
+	connected      bool
 )
 
 type ChatClient struct {
@@ -42,8 +43,9 @@ func main() {
 
 	client, err := makeClient(int32(rand.Intn(1e6)))
 	if err != nil {
-		logger.ErrorLogger.Fatalf("fatal error has occured : %v", err)
+		logger.ErrorLogger.Fatalf("Failed to make Client: %v", err)
 	}
+
 	client.EnterUsername()
 
 	streamOut, err := client.clientService.Publish(context.Background())
@@ -65,6 +67,16 @@ func main() {
 	<-bl
 }
 
+func setup() *ChatClient{
+	rand.Seed(time.Now().UnixNano())
+
+	client, err := makeClient(int32(rand.Intn(1e6)))
+	if err != nil {
+		logger.ErrorLogger.Fatalf("Failed to make Client: %v", err)
+	}
+	return client
+}
+
 func (cc *ChatClient) receiveMessage() {
 	var err error
 	var stream protos.ChittyChatService_BroadcastClient
@@ -72,9 +84,11 @@ func (cc *ChatClient) receiveMessage() {
 	for {
 		if stream == nil {
 			if stream, err = cc.subscribe(); err != nil {
+				UserInput() // wait for user to close
+				Output("Closing client")
 				logger.ErrorLogger.Fatalf("Failed to subscribe: %v", err)
 				cc.sleep()
-				// Retry on failure
+				// Retry on failure SHould do something more
 				continue
 			}
 		}
@@ -90,15 +104,15 @@ func (cc *ChatClient) receiveMessage() {
 			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
 			msgCode := response.Code
 			switch {
-				case msgCode == 1:
-					Output(fmt.Sprintf("Logical Timestamp:%d, %s joined the server\n", result, response.Username));
-				case msgCode == 2:
-					// det går galt her
-					Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
-				case msgCode == 3:
-					Output(fmt.Sprintf("Logical Timestamp:%d, %s left the server\n", result, response.Username));
-				case msgCode == 4:
-					Output(fmt.Sprintf("Logical Timestamp:%d, server closed. Press ctrl + c to exit.\n", result));
+			case msgCode == 1:
+				Output(fmt.Sprintf("Logical Timestamp:%d, %s joined the server\n", result, response.Username))
+			case msgCode == 2:
+				// det går galt her
+				Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
+			case msgCode == 3:
+				Output(fmt.Sprintf("Logical Timestamp:%d, %s left the server\n", result, response.Username))
+			case msgCode == 4:
+				Output(fmt.Sprintf("Logical Timestamp:%d, server closed. Press ctrl + c to exit.\n", result))
 			}
 		}
 	}
@@ -129,15 +143,10 @@ func makeConnection() (*grpc.ClientConn, error) {
 	return grpc.Dial(":3000", []grpc.DialOption{grpc.WithInsecure(), grpc.WithBlock()}...)
 }
 
-/* func (c *ChatClient) close() {
-	if err := c.conn.Close(); err != nil {
-		logger.ErrorLogger.Fatalf("An error occured during closing connection: %v", err)
-	}
-} */
-
 func (ch *clienthandle) recvStatus() {
 	//create a loop
-	for {
+
+	for !connected {
 		mssg, err := ch.streamOut.Recv()
 		if err != nil {
 			logger.ErrorLogger.Fatalf("Error in receiving message from server :: %v", err)
@@ -146,6 +155,7 @@ func (ch *clienthandle) recvStatus() {
 		if checkingStatus {
 			Output(fmt.Sprintf("%s : %s \n", mssg.Operation, mssg.Status))
 		}
+		connected = true
 	}
 }
 
@@ -154,17 +164,39 @@ func (ch *clienthandle) sendMessage(client ChatClient) {
 	for {
 		clientMessage := UserInput()
 		protos.Tick(&client.lamport)
+
+		if strings.Contains(clientMessage, "-- quit") {
+			Output(fmt.Sprintf("Logical Timestamp:%d, connection to server closed. Press any key to exit.\n", client.lamport.Timestamp))
+			clientMessageBox := &protos.ClientMessage{
+				ClientId:         client.id,
+				UserName:         client.clientName,
+				Msg:              "",
+				LamportTimestamp: client.lamport.Timestamp,
+				Code:             2,
+			}
+
+			err := ch.streamOut.Send(clientMessageBox)
+			if err != nil {
+				logger.WarningLogger.Printf("Error while sending message to server :: %v", err)
+			}
+			UserInput()
+			os.Exit(3)
+
+		} else {
+
 		clientMessageBox := &protos.ClientMessage{
 			ClientId:         client.id,
 			UserName:         client.clientName,
 			Msg:              clientMessage,
 			LamportTimestamp: client.lamport.Timestamp,
+			Code:             1,
 		}
 
 		err := ch.streamOut.Send(clientMessageBox)
 		if err != nil {
 			logger.WarningLogger.Printf("Error while sending message to server :: %v", err)
 		}
+	}
 
 	}
 
@@ -178,7 +210,6 @@ func WelcomeMsg() string {
 	return `>>> WELCOME TO CHITTY CHAT <<<
 --------------------------------------------------
 Please enter an username to begin chatting:
-Press Ctrl + C to leave!
 			`
 }
 
@@ -217,6 +248,7 @@ func UserInput() string {
 
 func Welcome(input string) {
 	Output("Welcome to the chat " + input)
+	Output("Type: '-- quit' to exit")
 }
 
 func FormatToChat(user, msg string, timestamp int32) string {
@@ -225,5 +257,4 @@ func FormatToChat(user, msg string, timestamp int32) string {
 
 func Output(input string) {
 	fmt.Println(input)
-	fmt.Println("-------------------")
 }
