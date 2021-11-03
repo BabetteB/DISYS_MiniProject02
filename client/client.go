@@ -121,8 +121,9 @@ func (cc *ChatClient) receiveMessage() {
 func (c *ChatClient) subscribe() (protos.ChittyChatService_BroadcastClient, error) {
 	logger.InfoLogger.Printf("Subscribing client ID: %d", c.id)
 	return c.clientService.Broadcast(context.Background(), &protos.Subscription{
-		ClientId: c.id,
-		UserName: c.clientName,
+		ClientId:         c.id,
+		UserName:         c.clientName,
+		LamportTimestamp: c.lamport.Timestamp,
 	})
 }
 
@@ -232,6 +233,7 @@ func LimitReader(s string) string {
 func (s *ChatClient) EnterUsername() {
 	s.clientName = UserInput()
 	Welcome(s.clientName)
+	s.lamport.Tick()
 	logger.InfoLogger.Printf("User registred: %s", s.clientName)
 }
 
@@ -257,4 +259,5 @@ func FormatToChat(user, msg string, timestamp int32) string {
 
 func Output(input string) {
 	fmt.Println(input)
+	fmt.Println("-------------------")
 }
