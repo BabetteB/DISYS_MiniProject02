@@ -88,11 +88,17 @@ func (cc *ChatClient) receiveMessage() {
 		}
 		if response.ClientId != cc.id {
 			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
-			if response.Code == 1 {
-				Output(fmt.Sprintf("Logical Timestamp:%d, %s joined the server\n", result, response.Username))
-			} else {
-				// det går galt her
-				Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
+			msgCode := response.Code
+			switch {
+				case msgCode == 1:
+					Output(fmt.Sprintf("Logical Timestamp:%d, %s joined the server\n", result, response.Username));
+				case msgCode == 2:
+					// det går galt her
+					Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
+				case msgCode == 3:
+					Output(fmt.Sprintf("Logical Timestamp:%d, %s left the server\n", result, response.Username));
+				case msgCode == 4:
+					Output(fmt.Sprintf("Logical Timestamp:%d, server closed. Press ctrl + c to exit.\n", result));
 			}
 		}
 	}

@@ -267,6 +267,11 @@ func main() {
 
 	var o string
 	fmt.Scanln(&o)
+	Output("Server exiting... ")
+
+	addToMessageQueue(0, s.lamport.Timestamp, 4, "", "")
+	Output("Exit successfull")
+
 	logger.InfoLogger.Println("Exit successfull. Server closing...")
 
 	os.Exit(3)
