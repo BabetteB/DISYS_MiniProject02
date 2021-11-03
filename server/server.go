@@ -87,9 +87,12 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				break
 			}
 			fmt.Printf("Lamport in server: %d\n", s.lamport.Timestamp)
+			logger.InfoLogger.Printf("Lamport in server: %d\n", s.lamport.Timestamp)
 			fmt.Printf("Lamport from message: %d\n", messageHandle.MessageQue[0].Lamport)
+			logger.InfoLogger.Printf("Lamport from message: %d\n", messageHandle.MessageQue[0].Lamport)
 			s.lamport.RecieveIncomingLamportInt(messageHandle.MessageQue[0].Lamport) // dette er for at checke hvilken timestamp har max også +1 til den værdi
 			fmt.Printf("Lamport from server converting to message: %d", s.lamport.Timestamp)
+			logger.InfoLogger.Printf("Lamport from server converting to message: %d", s.lamport.Timestamp)
 			messageHandle.MessageQue[0].Lamport = s.lamport.Timestamp // test
 			// i dette tilfælde burde den incremente serverens timestamp blive 6+1 efter 1 besked sendt af client nr.2
 			senderUniqueCode := messageHandle.MessageQue[0].ClientUniqueCode
