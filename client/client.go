@@ -90,7 +90,9 @@ func (cc *ChatClient) receiveMessage() {
 			cc.sleep()
 			continue
 		}
+
 		if response.ClientId != cc.id {
+			cc.lamport.UpdateTimestamp(response.LamportTimestamp)
 			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
 			msgCode := response.Code
 			switch {

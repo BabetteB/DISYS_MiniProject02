@@ -9,11 +9,18 @@ func (l *LamportTimestamp) Tick() {
 	l.Timestamp += 1
 }
 
-func (lamport *LamportTimestamp) RecieveTest(timestamp int32) {
+func (lamport *LamportTimestamp) RecieveIncomingLamportInt(timestamp int32) {
 	if lamport.Timestamp < timestamp {
 		lamport.Timestamp = timestamp + 1
 	} else {
 		lamport.Tick()
+	}
+}
+
+func (lamport *LamportTimestamp) UpdateTimestamp(timestamp int32) {
+	// trying to save the new timestamp if the int timestamp is higher than the struct's
+	if lamport.Timestamp < timestamp {
+		lamport.Timestamp = timestamp
 	}
 }
 

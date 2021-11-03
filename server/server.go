@@ -56,7 +56,7 @@ type sub struct {
 var messageHandle = raw{}
 
 func (s *Server) Broadcast(request *protos.Subscription, stream protos.ChittyChatService_BroadcastServer) error {
-	s.lamport.RecieveTest(request.LamportTimestamp) // the server is recieving a message of a new client joining
+	s.lamport.RecieveIncomingLamportInt(request.LamportTimestamp) // the server is recieving a message of a new client joining
 	//s.lamport.Tick()
 	logger.InfoLogger.Printf("Lamp.t.: %d, Received subscribe request from ID: %d", s.lamport.Timestamp, request.ClientId)
 	fin := make(chan bool)
@@ -89,7 +89,7 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				messageHandle.mu.Unlock()
 				break
 			}
-			s.lamport.RecieveTest(messageHandle.MessageQue[0].Lamport) // dette er for at checke hvilken timestamp har max også +1 til den værdi
+			s.lamport.RecieveIncomingLamportInt(messageHandle.MessageQue[0].Lamport) // dette er for at checke hvilken timestamp har max også +1 til den værdi
 			// i dette tilfælde burde den incremente serverens timestamp blive 6+1 efter 1 besked sendt af client nr.2
 			messageHandle.MessageQue[0].Lamport = s.lamport.Timestamp
 			senderUniqueCode := messageHandle.MessageQue[0].ClientUniqueCode
