@@ -2,26 +2,20 @@ package protos
 
 import (
 	"fmt"
-	"sync"
 )
 
 type LamportTimestamp struct {
 	id        int32
 	Timestamp int32
-	sync.Mutex
 }
 
 func (l *LamportTimestamp) Tick() {
-	l.Lock()
 	l.Timestamp += 1
-	l.Unlock()
 }
 
 func (lamport *LamportTimestamp) RecieveTest(timestamp int32) {
 	if lamport.Timestamp < timestamp {
-		lamport.Lock()
 		lamport.Timestamp = timestamp + 1
-		lamport.Unlock()
 	} else {
 		lamport.Tick()
 	}
