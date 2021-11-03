@@ -21,14 +21,14 @@ import (
 var (
 	checkingStatus bool
 	connected      bool
+	clientName     string
+	ID             int32 // id is the client ID used for subscribing
+	lamport        protos.LamportTimestamp
 )
 
 type ChatClient struct {
 	clientService protos.ChittyChatServiceClient
 	conn          *grpc.ClientConn // conn is the client gRPC connection
-	id            int32            // id is the client ID used for subscribing
-	clientName    string
-	lamport       protos.LamportTimestamp
 }
 
 type clienthandle struct {
@@ -40,8 +40,9 @@ func main() {
 	Output(WelcomeMsg())
 
 	rand.Seed(time.Now().UnixNano())
+	ID = int32(rand.Intn(1e6))
 
-	client, err := makeClient(int32(rand.Intn(1e6)))
+	client, err := makeClient()
 	if err != nil {
 		logger.ErrorLogger.Fatalf("Failed to make Client: %v", err)
 	}
@@ -91,9 +92,9 @@ func (cc *ChatClient) receiveMessage() {
 			continue
 		}
 
-		if response.ClientId != cc.id {
-			cc.lamport.UpdateTimestamp(response.LamportTimestamp)
-			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
+		if response.ClientId != ID {
+			lamport.UpdateTimestamp(response.LamportTimestamp)
+			result := protos.RecievingCompareToLamport(&lamport, response.LamportTimestamp)
 			msgCode := response.Code
 			switch {
 			case msgCode == 1:
@@ -111,15 +112,14 @@ func (cc *ChatClient) receiveMessage() {
 }
 
 func (c *ChatClient) subscribe() (protos.ChittyChatService_BroadcastClient, error) {
-	logger.InfoLogger.Printf("Subscribing client ID: %d", c.id)
+	logger.InfoLogger.Printf("Subscribing client ID: %d", ID)
 	return c.clientService.Broadcast(context.Background(), &protos.Subscription{
-		ClientId:         c.id,
-		UserName:         c.clientName,
-		LamportTimestamp: c.lamport.Timestamp,
+		ClientId: ID,
+		UserName: clientName,
 	})
 }
 
-func makeClient(idn int32) (*ChatClient, error) {
+func makeClient() (*ChatClient, error) {
 	conn, err := makeConnection()
 	if err != nil {
 		return nil, err
@@ -127,7 +127,6 @@ func makeClient(idn int32) (*ChatClient, error) {
 	return &ChatClient{
 		clientService: protos.NewChittyChatServiceClient(conn),
 		conn:          conn,
-		id:            idn,
 	}, nil
 }
 
@@ -156,15 +155,15 @@ func (ch *clienthandle) sendMessage(client ChatClient) {
 	// create a loop
 	for {
 		clientMessage := UserInput()
-		client.lamport.Tick()
+		lamport.Tick()
 
 		if strings.Contains(clientMessage, "-- quit") {
-			Output(fmt.Sprintf("Logical Timestamp:%d, connection to server closed. Press any key to exit.\n", client.lamport.Timestamp))
+			Output(fmt.Sprintf("Logical Timestamp:%d, connection to server closed. Press any key to exit.\n", lamport.Timestamp))
 			clientMessageBox := &protos.ClientMessage{
-				ClientId:         client.id,
-				UserName:         client.clientName,
+				ClientId:         ID,
+				UserName:         clientName,
 				Msg:              "",
-				LamportTimestamp: client.lamport.Timestamp,
+				LamportTimestamp: lamport.Timestamp,
 				Code:             2,
 			}
 
@@ -178,10 +177,10 @@ func (ch *clienthandle) sendMessage(client ChatClient) {
 		} else {
 
 			clientMessageBox := &protos.ClientMessage{
-				ClientId:         client.id,
-				UserName:         client.clientName,
+				ClientId:         ID,
+				UserName:         clientName,
 				Msg:              clientMessage,
-				LamportTimestamp: client.lamport.Timestamp,
+				LamportTimestamp: lamport.Timestamp,
 				Code:             1,
 			}
 
@@ -223,10 +222,11 @@ func LimitReader(s string) string {
 }
 
 func (s *ChatClient) EnterUsername() {
-	s.clientName = UserInput()
-	Welcome(s.clientName)
-	s.lamport.Tick()
-	logger.InfoLogger.Printf("User registred: %s", s.clientName)
+	clientName = UserInput()
+	Welcome(clientName)
+	lamport.Tick()
+	logger.InfoLogger.Printf("User registred: %s", clientName)
+	println(clientName)
 }
 
 func UserInput() string {
@@ -251,5 +251,4 @@ func FormatToChat(user, msg string, timestamp int32) string {
 
 func Output(input string) {
 	fmt.Println(input)
-	fmt.Println("-------------------")
 }

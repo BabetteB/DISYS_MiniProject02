@@ -8,7 +8,6 @@ import (
 	"time"
 
 	logger "github.com/BabetteB/DISYS_MiniProject02/logFile"
-
 	"github.com/BabetteB/DISYS_MiniProject02/protos"
 	"google.golang.org/grpc"
 )
@@ -20,11 +19,9 @@ MessageCode To Client:
 3 - client left server
 4 - Server closing
 
-MessageCode To Client:
+MessageCode To Server:
 1 - Normal Message
 2 - Disconnect
-3 - client left server
-4 - Server closing
 */
 
 type message struct {
@@ -42,9 +39,9 @@ type raw struct {
 
 type Server struct {
 	protos.UnimplementedChittyChatServiceServer
-	subscribers sync.Map
-	unsubscribe []int32
-	lamport     protos.LamportTimestamp
+	subscribers   sync.Map
+	unsubscribe   []int32
+	lamport       protos.LamportTimestamp
 }
 
 type sub struct {
@@ -89,7 +86,9 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				messageHandle.mu.Unlock()
 				break
 			}
+
 			s.lamport.RecieveIncomingLamportInt(messageHandle.MessageQue[0].Lamport) // dette er for at checke hvilken timestamp har max også +1 til den værdi
+
 			// i dette tilfælde burde den incremente serverens timestamp blive 6+1 efter 1 besked sendt af client nr.2
 			messageHandle.MessageQue[0].Lamport = s.lamport.Timestamp
 			senderUniqueCode := messageHandle.MessageQue[0].ClientUniqueCode
@@ -120,39 +119,20 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 					Code:             messageCode,
 				}); err != nil {
 					logger.ErrorLogger.Output(2, (fmt.Sprintf("Failed to send data to client: %v", err)))
-					select {
+					/* select {
 					case sub.finished <- true:
 						logger.InfoLogger.Printf("Unsubscribed successfully client: %d", id)
 					default:
 						// Default case is to avoid blocking in case client has already unsubscribed
-					}
-					// In case of error the client would re-subscribe so close the subscriber stream
+					} */
 					s.unsubscribe = append(s.unsubscribe, id)
 				}
 				return true
 			})
 			logger.InfoLogger.Println("Brodcasting message success.")
 
-			// Unsubscribe erroneous client streams - this will happen when next broadcast happens.
-			for _, id := range s.unsubscribe {
-				logger.InfoLogger.Printf("Killed client: %v", id)
-				Output(fmt.Sprintf("Client: %v disconnected", id))
 
-				idd := int32(id)
-				m, ok := s.subscribers.Load(idd)
-				if !ok {
-					logger.InfoLogger.Println(fmt.Sprintf("Failed to find subscriber value: %T", idd))
-				}
-				sub, ok := m.(sub)
-				if !ok {
-					logger.WarningLogger.Panicf("Failed to cast subscriber value: %T", sub)
-				}
-
-				// addToMessageQueue(id, s.lamport.Timestamp, 3, sub.name, "")
-
-				s.subscribers.Delete(id)
-			}
-
+		
 			messageHandle.mu.Lock()
 
 			if len(messageHandle.MessageQue) > 1 {
@@ -167,32 +147,54 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 	}
 }
 
-func (s *Server) Publish(srv protos.ChittyChatService_PublishServer) error {
-	logger.InfoLogger.Println("Requests publish")
-	errch := make(chan error)
+func (s *Server) killSignals() {
+	for _, id := range s.unsubscribe {
+		logger.InfoLogger.Printf("Killed client: %v", id)
 
-	// receive messages - init a go routine
-	go s.receiveFromStream(srv, errch)
-	go sendToStream(srv, errch)
-	return <-errch
+		idd := int32(id)
+		m, ok := s.subscribers.Load(idd)
+		if !ok && m != nil {
+			logger.InfoLogger.Println(fmt.Sprintf("Failed to find subscriber value: %T", idd))
+		}
+		sub, ok := m.(sub)
+		if !ok && m != nil {
+			logger.WarningLogger.Panicf("Failed to cast subscriber value: %T", sub)
+		}
+		if m != nil {
+			addToMessageQueue(id, s.lamport.Timestamp, 3, sub.name, "")
+		}
+		s.subscribers.Delete(id)
+		Output(fmt.Sprintf("Client: %v disconnected", id))
+	}
 }
 
-func (s *Server) receiveFromStream(srv protos.ChittyChatService_PublishServer, errch_ chan error) {
+func (s *Server) Publish(srv protos.ChittyChatService_PublishServer) error {
+	logger.InfoLogger.Println("Requests publish")
+	er := make(chan error)
+
+	go s.receiveFromStream(srv, er)
+	go sendToStream(srv, er)
+
+	return <-er
+}
+
+func (s *Server) receiveFromStream(srv protos.ChittyChatService_PublishServer, er_ chan error) {
 
 	//implement a loop
 	for {
 		mssg, err := srv.Recv()
+		if err != nil {
+				logger.InfoLogger.Println(fmt.Sprintf("Error occured when recieving message: %v", err))
+				break
+			}
+		id := mssg.ClientId
+
 		switch {
 		case mssg.Code == 2: // disconnecting
-			addToMessageQueue(mssg.ClientId, mssg.LamportTimestamp, 3, mssg.UserName, mssg.Msg)
-			s.unsubscribe = append(s.unsubscribe, mssg.ClientId)
+			s.unsubscribe = append(s.unsubscribe, id)
+			s.killSignals()
 		case mssg.Code == 1: // chatting
-			addToMessageQueue(mssg.ClientId, mssg.LamportTimestamp, 2, mssg.UserName, mssg.Msg)
-		case err != nil:
-			{
-				logger.InfoLogger.Println(fmt.Sprintf("Error occured when recieving message: %v", err))
-				errch_ <- err
-			}
+			addToMessageQueue(id, mssg.LamportTimestamp, 2, mssg.UserName, mssg.Msg)
 		default:
 		}
 	}
@@ -214,7 +216,7 @@ func addToMessageQueue(id, lamport, code int32, username, msg string) {
 	messageHandle.mu.Unlock()
 }
 
-func sendToStream(srv protos.ChittyChatService_PublishServer, errch_ chan error) {
+func sendToStream(srv protos.ChittyChatService_PublishServer, er_ chan error) {
 	for {
 		time.Sleep(500 * time.Millisecond)
 
@@ -225,7 +227,7 @@ func sendToStream(srv protos.ChittyChatService_PublishServer, errch_ chan error)
 
 		if err != nil {
 			logger.InfoLogger.Println(fmt.Sprintf("An error occured when sending message: %v", err))
-			errch_ <- err
+			er_ <- err
 		}
 	}
 }
@@ -262,7 +264,7 @@ func main() {
 	Output("Server exiting... ")
 
 	addToMessageQueue(0, s.lamport.Timestamp, 4, "", "")
-	time.Sleep(3 * time.Second)
+	time.Sleep(4 * time.Second)
 	Output("Exit successfull")
 
 	logger.InfoLogger.Println("Exit successfull. Server closing...")
