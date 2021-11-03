@@ -13,15 +13,15 @@ type LamportTimestamp struct {
 
 func (l *LamportTimestamp) Tick() {
 	l.Lock()
-	defer l.Unlock()
 	l.Timestamp += 1
+	l.Unlock()
 }
 
 func (lamport *LamportTimestamp) RecieveTest(timestamp int32) {
 	if lamport.Timestamp < timestamp {
 		lamport.Lock()
-		defer lamport.Unlock()
 		lamport.Timestamp = timestamp + 1
+		lamport.Unlock()
 	} else {
 		lamport.Tick()
 	}
