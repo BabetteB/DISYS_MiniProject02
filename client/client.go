@@ -67,7 +67,6 @@ func main() {
 
 func (cc *ChatClient) receiveMessage() {
 	var err error
-	// stream is the client side of the RPC stream
 	var stream protos.ChittyChatService_BroadcastClient
 
 	for {
@@ -83,16 +82,18 @@ func (cc *ChatClient) receiveMessage() {
 
 		if err != nil {
 			logger.WarningLogger.Printf("Failed to receive message: %v", err)
-			// Clearing the stream will force the client to resubscribe on next iteration
 			stream = nil
 			cc.sleep()
-			// Retry on failure
 			continue
 		}
 		if response.ClientId != cc.id {
-			// det går galt her
 			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
-			Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
+			if response.Code == 1{
+				Output(fmt.Sprintf("Logical Timestamp:%d, %s joined the server\n", result, response.Username))			
+			}else {
+				// det går galt her
+				Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
+			}
 		}
 	}
 }
@@ -122,11 +123,11 @@ func makeConnection() (*grpc.ClientConn, error) {
 	return grpc.Dial(":3000", []grpc.DialOption{grpc.WithInsecure(), grpc.WithBlock()}...)
 }
 
-func (c *ChatClient) close() {
+/* func (c *ChatClient) close() {
 	if err := c.conn.Close(); err != nil {
 		logger.ErrorLogger.Fatalf("An error occured during closing connection: %v", err)
 	}
-}
+} */
 
 func (ch *clienthandle) recvStatus() {
 	//create a loop
@@ -194,7 +195,7 @@ func LimitReader(s string) string {
 func (s *ChatClient) EnterUsername() {
 	s.clientName = UserInput()
 	Welcome(s.clientName)
-	logger.InfoLogger.Printf("User registred: %s", s.clientName) /// BAAAAARBETSE:P
+	logger.InfoLogger.Printf("User registred: %s", s.clientName) 
 }
 
 func UserInput() string {
