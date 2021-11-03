@@ -92,21 +92,20 @@ func (cc *ChatClient) receiveMessage() {
 			continue
 		}
 
-		if response.ClientId != ID {
-			lamport.UpdateTimestamp(response.LamportTimestamp)
-			result := protos.RecievingCompareToLamport(&lamport, response.LamportTimestamp)
-			msgCode := response.Code
-			switch {
-			case msgCode == 1:
-				Output(fmt.Sprintf("Logical Timestamp:%d, %s joined the server\n", result, response.Username))
-			case msgCode == 2:
-				// det går galt her
-				Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
-			case msgCode == 3:
-				Output(fmt.Sprintf("Logical Timestamp:%d, %s left the server\n", result, response.Username))
-			case msgCode == 4:
-				Output(fmt.Sprintf("Logical Timestamp:%d, server closed. Press ctrl + c to exit.\n", result))
-			}
+		lamport.UpdateTimestamp(response.LamportTimestamp)
+		result := protos.RecievingCompareToLamport(&lamport, response.LamportTimestamp)
+		msgCode := response.Code
+		switch {
+		case msgCode == 1:
+			Output(fmt.Sprintf("Logical Timestamp:%d, %s joined the server\n", result, response.Username))
+		case msgCode == 2 && response.ClientId != ID:
+			// det går galt her
+			Output(fmt.Sprintf("Logical Timestamp:%d, %s says: %s \n", result, response.Username, response.Msg))
+		case msgCode == 3:
+			Output(fmt.Sprintf("Logical Timestamp:%d, %s left the server\n", result, response.Username))
+		case msgCode == 4:
+			Output(fmt.Sprintf("Logical Timestamp:%d, server closed. Press ctrl + c to exit.\n", result))
+
 		}
 	}
 }
