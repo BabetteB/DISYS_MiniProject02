@@ -67,16 +67,6 @@ func main() {
 	<-bl
 }
 
-func setup() *ChatClient{
-	rand.Seed(time.Now().UnixNano())
-
-	client, err := makeClient(int32(rand.Intn(1e6)))
-	if err != nil {
-		logger.ErrorLogger.Fatalf("Failed to make Client: %v", err)
-	}
-	return client
-}
-
 func (cc *ChatClient) receiveMessage() {
 	var err error
 	var stream protos.ChittyChatService_BroadcastClient
@@ -164,7 +154,7 @@ func (ch *clienthandle) sendMessage(client ChatClient) {
 	// create a loop
 	for {
 		clientMessage := UserInput()
-		protos.Tick(&client.lamport)
+		client.lamport.Tick()
 
 		if strings.Contains(clientMessage, "-- quit") {
 			Output(fmt.Sprintf("Logical Timestamp:%d, connection to server closed. Press any key to exit.\n", client.lamport.Timestamp))
@@ -185,19 +175,19 @@ func (ch *clienthandle) sendMessage(client ChatClient) {
 
 		} else {
 
-		clientMessageBox := &protos.ClientMessage{
-			ClientId:         client.id,
-			UserName:         client.clientName,
-			Msg:              clientMessage,
-			LamportTimestamp: client.lamport.Timestamp,
-			Code:             1,
-		}
+			clientMessageBox := &protos.ClientMessage{
+				ClientId:         client.id,
+				UserName:         client.clientName,
+				Msg:              clientMessage,
+				LamportTimestamp: client.lamport.Timestamp,
+				Code:             1,
+			}
 
-		err := ch.streamOut.Send(clientMessageBox)
-		if err != nil {
-			logger.WarningLogger.Printf("Error while sending message to server :: %v", err)
+			err := ch.streamOut.Send(clientMessageBox)
+			if err != nil {
+				logger.WarningLogger.Printf("Error while sending message to server :: %v", err)
+			}
 		}
-	}
 
 	}
 
