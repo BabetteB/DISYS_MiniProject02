@@ -87,13 +87,14 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				messageHandle.mu.Unlock()
 				break
 			}
-			fmt.Printf("sending client timestamp: %d", messageHandle.MQue[0].Lamport)
-			s.lamport.RecieveTest(messageHandle.MQue[0].Lamport)
-			s.lamport.Tick()
+			fmt.Printf("sending client timestamp: %d", messageHandle.MQue[0].Lamport) // viser 1, selvom den måske burde være 6
+			s.lamport.RecieveTest(messageHandle.MQue[0].Lamport)                      // dette er for at checke hvilken timestamp har max også +1 til den værdi
+			// i dette tilfælde burde den incremente serverens timestamp blive 6+1 efter 1 besked sendt af client nr.2
+			s.lamport.Tick() // dette er for at broadcaste
 			fmt.Printf("result from the lamport function: %d ,", s.lamport.Timestamp)
 			senderUniqueCode := messageHandle.MQue[0].ClientUniqueCode
-			senderName4Client := messageHandle.MQue[0].ClientName
-			LamportTimestamp := s.lamport.Timestamp
+			senderName4Client := messageHandle.MQue[0].ClientName // måske er det her det går galt?
+			LamportTimestamp := s.lamport.Timestamp               // serveren timestamp burde være det højeste, så det bliver sendt tilbage
 			messageFromServer := messageHandle.MQue[0].Msg
 
 			messageHandle.mu.Unlock()
@@ -150,6 +151,8 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 	}
 }
 
+// Der burde nok være noget med lamport her, da det også er en event - problemet tror jeg ligger
+// i at den nye timestamp ikke bliver gemt - ved ikke om det er pga. der bliver kaldt på de forkerte timestamps
 func (s *Server) Publish(srv protos.ChittyChatService_PublishServer) error {
 
 	errch := make(chan error)

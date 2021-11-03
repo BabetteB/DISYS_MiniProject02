@@ -88,13 +88,18 @@ func (cc *ChatClient) receiveMessage() {
 			cc.sleep()
 			// Retry on failure
 			continue
+
 		}
 		if response.ClientId != cc.id {
 			//result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
-			cc.lamport.RecieveTest(response.LamportTimestamp)
+			//cc.lamport.RecieveTest(response.LamportTimestamp)
+			// her viser den første gang det rigtige timestamp, som er 6 når den første client sender besked
+			// hvis client nr. så sender besked, som burde have timestamp 6, er denne timestamp kun 2 eller 3
 			fmt.Printf("\n\n TimestamP : %d for client: %s", cc.lamport.Timestamp, cc.clientName)
-			cc.lamport.Timestamp = cc.lamport.Timestamp
-			Output(fmt.Sprintf("Logical Timestamp: %d, %s says: %s \n", cc.lamport.Timestamp, response.Username, response.Msg))
+			//cc.lamport.Timestamp = cc.lamport.Timestamp // selvom den siger at client b ny har timestamp 6 - er dette en løgn
+			// tror det er pga. at jeg sender serverens timestamp med i stedet for client A's?
+			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
+			Output(fmt.Sprintf("Logical Timestamp: %d, %s says: %s \n", result, response.Username, response.Msg))
 		}
 	}
 }
@@ -146,16 +151,17 @@ func (ch *clienthandle) recvStatus() {
 
 func (ch *clienthandle) sendMessage(client ChatClient) {
 	// create a loop
+	// tror der går noget galt her?
 	for {
 		clientMessage := UserInput()
-		client.lamport.Tick()
-		fmt.Printf("Timestamp ticked: %d,", client.lamport.Timestamp)
+		client.lamport.Tick() // increment - we are sending a message
 		clientMessageBox := &protos.ClientMessage{
 			ClientId:         client.id,
 			UserName:         client.clientName,
 			Msg:              clientMessage,
 			LamportTimestamp: client.lamport.Timestamp,
 		}
+		fmt.Printf("client timstamp + client: %d, %s; ", client.lamport.Timestamp, client.clientName) //delete - it's for testing timestamp
 
 		err := ch.streamOut.Send(clientMessageBox)
 		if err != nil {
@@ -196,7 +202,7 @@ func LimitReader(s string) string {
 
 func (s *ChatClient) EnterUsername() {
 	s.clientName = UserInput()
-	s.lamport.Tick()
+	s.lamport.Tick() // a local event has occured
 	Welcome(s.clientName)
 	//logger.InfoLogger.Printf("User registred: %v", user) /// BAAAAARBETSE:P
 }
