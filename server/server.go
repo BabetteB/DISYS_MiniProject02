@@ -27,7 +27,6 @@ MessageCode To Client:
 4 - Server closing
 */
 
-// burde nok have timestamp inkluderet... ??????????????????????
 type message struct {
 	ClientUniqueCode int32
 	ClientName       string
@@ -51,13 +50,14 @@ type Server struct {
 type sub struct {
 	stream   protos.ChittyChatService_BroadcastServer
 	finished chan<- bool
-	name		string
+	name     string
 }
 
 var messageHandle = raw{}
 
 func (s *Server) Broadcast(request *protos.Subscription, stream protos.ChittyChatService_BroadcastServer) error {
 	s.lamport.RecieveTest(request.LamportTimestamp) // the server is recieving a message of a new client joining
+	//s.lamport.Tick()
 	logger.InfoLogger.Printf("Lamp.t.: %d, Received subscribe request from ID: %d", s.lamport.Timestamp, request.ClientId)
 	fin := make(chan bool)
 
@@ -89,10 +89,9 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				messageHandle.mu.Unlock()
 				break
 			}
-			s.lamport.RecieveTest(messageHandle.MessageQue[0].Lamport)                      // dette er for at checke hvilken timestamp har max også +1 til den værdi
+			s.lamport.RecieveTest(messageHandle.MessageQue[0].Lamport) // dette er for at checke hvilken timestamp har max også +1 til den værdi
 			// i dette tilfælde burde den incremente serverens timestamp blive 6+1 efter 1 besked sendt af client nr.2
-			s.lamport.Tick() // dette er for at broadcaste
-			
+			messageHandle.MessageQue[0].Lamport = s.lamport.Timestamp
 			senderUniqueCode := messageHandle.MessageQue[0].ClientUniqueCode
 			senderName := messageHandle.MessageQue[0].ClientName
 			LamportTimestamp := messageHandle.MessageQue[0].Lamport
@@ -100,7 +99,6 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 			messageCode := messageHandle.MessageQue[0].MessageCode
 
 			messageHandle.mu.Unlock()
-
 
 			s.subscribers.Range(func(k, v interface{}) bool {
 				id, ok := k.(int32)
@@ -123,9 +121,9 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				}); err != nil {
 					logger.ErrorLogger.Output(2, (fmt.Sprintf("Failed to send data to client: %v", err)))
 					select {
-						case sub.finished <- true:
-							logger.InfoLogger.Printf("Unsubscribed successfully client: %d", id)
-						default:
+					case sub.finished <- true:
+						logger.InfoLogger.Printf("Unsubscribed successfully client: %d", id)
+					default:
 						// Default case is to avoid blocking in case client has already unsubscribed
 					}
 					// In case of error the client would re-subscribe so close the subscriber stream
@@ -140,7 +138,7 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				logger.InfoLogger.Printf("Killed client: %v", id)
 				Output(fmt.Sprintf("Client: %v disconnected", id))
 
-				idd := int32(id) 
+				idd := int32(id)
 				m, ok := s.subscribers.Load(idd)
 				if !ok {
 					logger.InfoLogger.Println(fmt.Sprintf("Failed to find subscriber value: %T", idd))
@@ -149,7 +147,7 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				if !ok {
 					logger.WarningLogger.Panicf("Failed to cast subscriber value: %T", sub)
 				}
-				
+
 				// addToMessageQueue(id, s.lamport.Timestamp, 3, sub.name, "")
 
 				s.subscribers.Delete(id)
@@ -175,11 +173,11 @@ func (s *Server) Publish(srv protos.ChittyChatService_PublishServer) error {
 
 	// receive messages - init a go routine
 	go s.receiveFromStream(srv, errch)
-	go sendToStream(srv, errch) 
+	go sendToStream(srv, errch)
 	return <-errch
 }
 
-func(s *Server) receiveFromStream(srv protos.ChittyChatService_PublishServer, errch_ chan error) {
+func (s *Server) receiveFromStream(srv protos.ChittyChatService_PublishServer, errch_ chan error) {
 
 	//implement a loop
 	for {
@@ -190,12 +188,13 @@ func(s *Server) receiveFromStream(srv protos.ChittyChatService_PublishServer, er
 			s.unsubscribe = append(s.unsubscribe, mssg.ClientId)
 		case mssg.Code == 1: // chatting
 			addToMessageQueue(mssg.ClientId, mssg.LamportTimestamp, 2, mssg.UserName, mssg.Msg)
-		case err != nil: {
-			logger.InfoLogger.Println(fmt.Sprintf("Error occured when recieving message: %v", err))
-			errch_ <- err
-		}			
-		default: 
-		}	
+		case err != nil:
+			{
+				logger.InfoLogger.Println(fmt.Sprintf("Error occured when recieving message: %v", err))
+				errch_ <- err
+			}
+		default:
+		}
 	}
 }
 
@@ -206,7 +205,7 @@ func addToMessageQueue(id, lamport, code int32, username, msg string) {
 		ClientUniqueCode: id,
 		ClientName:       username,
 		Msg:              msg,
-		MessageCode:      code, 
+		MessageCode:      code,
 		Lamport:          lamport,
 	})
 
@@ -263,7 +262,7 @@ func main() {
 	Output("Server exiting... ")
 
 	addToMessageQueue(0, s.lamport.Timestamp, 4, "", "")
-	time.Sleep(3* time.Second)
+	time.Sleep(3 * time.Second)
 	Output("Exit successfull")
 
 	logger.InfoLogger.Println("Exit successfull. Server closing...")
