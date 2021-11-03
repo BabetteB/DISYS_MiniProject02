@@ -39,9 +39,9 @@ type raw struct {
 
 type Server struct {
 	protos.UnimplementedChittyChatServiceServer
-	subscribers   sync.Map
-	unsubscribe   []int32
-	lamport       protos.LamportTimestamp
+	subscribers sync.Map
+	unsubscribe []int32
+	lamport     protos.LamportTimestamp
 }
 
 type sub struct {
@@ -53,8 +53,8 @@ type sub struct {
 var messageHandle = raw{}
 
 func (s *Server) Broadcast(request *protos.Subscription, stream protos.ChittyChatService_BroadcastServer) error {
+	//fmt.Printf("Receiving lamport from client: %d\n", request.LamportTimestamp)
 	s.lamport.RecieveIncomingLamportInt(request.LamportTimestamp) // the server is recieving a message of a new client joining
-	//s.lamport.Tick()
 	logger.InfoLogger.Printf("Lamp.t.: %d, Received subscribe request from ID: %d", s.lamport.Timestamp, request.ClientId)
 	fin := make(chan bool)
 
@@ -86,11 +86,12 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 				messageHandle.mu.Unlock()
 				break
 			}
-
+			fmt.Printf("Lamport in server: %d\n", s.lamport.Timestamp)
+			fmt.Printf("Lamport from message: %d\n", messageHandle.MessageQue[0].Lamport)
 			s.lamport.RecieveIncomingLamportInt(messageHandle.MessageQue[0].Lamport) // dette er for at checke hvilken timestamp har max også +1 til den værdi
-
+			fmt.Printf("Lamport from server converting to message: %d", s.lamport.Timestamp)
+			messageHandle.MessageQue[0].Lamport = s.lamport.Timestamp // test
 			// i dette tilfælde burde den incremente serverens timestamp blive 6+1 efter 1 besked sendt af client nr.2
-			messageHandle.MessageQue[0].Lamport = s.lamport.Timestamp
 			senderUniqueCode := messageHandle.MessageQue[0].ClientUniqueCode
 			senderName := messageHandle.MessageQue[0].ClientName
 			LamportTimestamp := messageHandle.MessageQue[0].Lamport
@@ -131,8 +132,6 @@ func (s *Server) sendToClients(srv protos.ChittyChatService_BroadcastServer) {
 			})
 			logger.InfoLogger.Println("Brodcasting message success.")
 
-
-		
 			messageHandle.mu.Lock()
 
 			if len(messageHandle.MessageQue) > 1 {
@@ -172,6 +171,7 @@ func (s *Server) Publish(srv protos.ChittyChatService_PublishServer) error {
 	logger.InfoLogger.Println("Requests publish")
 	er := make(chan error)
 
+	s.lamport.Tick()
 	go s.receiveFromStream(srv, er)
 	go sendToStream(srv, er)
 
@@ -184,9 +184,9 @@ func (s *Server) receiveFromStream(srv protos.ChittyChatService_PublishServer, e
 	for {
 		mssg, err := srv.Recv()
 		if err != nil {
-				logger.InfoLogger.Println(fmt.Sprintf("Error occured when recieving message: %v", err))
-				break
-			}
+			logger.InfoLogger.Println(fmt.Sprintf("Error occured when recieving message: %v", err))
+			break
+		}
 		id := mssg.ClientId
 
 		switch {
