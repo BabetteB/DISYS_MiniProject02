@@ -8,20 +8,20 @@ import (
 type LamportTimestamp struct {
 	id        int32
 	Timestamp int32
-	mu        sync.Mutex
+	sync.Mutex
 }
 
 func (l *LamportTimestamp) Tick() {
-	l.mu.Lock()
+	l.Lock()
+	defer l.Unlock()
 	l.Timestamp += 1
-	l.mu.Unlock()
 }
 
 func (lamport *LamportTimestamp) RecieveTest(timestamp int32) {
 	if lamport.Timestamp < timestamp {
-		lamport.mu.Lock()
+		lamport.Lock()
+		defer lamport.Unlock()
 		lamport.Timestamp = timestamp + 1
-		lamport.mu.Unlock()
 	} else {
 		lamport.Tick()
 	}

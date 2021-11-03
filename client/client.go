@@ -97,7 +97,7 @@ func (cc *ChatClient) receiveMessage() {
 			// hvis client nr. så sender besked, som burde have timestamp 6, er denne timestamp kun 2 eller 3
 			fmt.Printf("\n\n TimestamP : %d for client: %s", cc.lamport.Timestamp, cc.clientName)
 			//cc.lamport.Timestamp = cc.lamport.Timestamp // selvom den siger at client b ny har timestamp 6 - er dette en løgn
-			// tror det er pga. at jeg sender serverens timestamp med i stedet for client A's?
+			// tror det er pga. at jeg sender serverens timestamp med i stedet for client A's? Nix, er testet
 			result := protos.RecievingCompareToLamport(&cc.lamport, response.LamportTimestamp)
 			Output(fmt.Sprintf("Logical Timestamp: %d, %s says: %s \n", result, response.Username, response.Msg))
 		}
